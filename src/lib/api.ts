@@ -201,12 +201,7 @@ export const eventApi = {
     page?: number;
     limit?: number;
   }): Promise<PaginatedResponse<Event>> => {
-    const q = new URLSearchParams();
-    if (params?.search) q.set('search', params.search);
-    if (params?.category) q.set('category', params.category);
-    if (params?.page) q.set('page', String(params.page));
-    if (params?.limit) q.set('limit', String(params.limit));
-    const events = await apiFetch<Event[]>(`/events?${q.toString()}`);
+    const events = await apiFetch<Event[]>('/events');
     const filtered = events.filter((event) => {
       const search = params?.search?.toLowerCase() || '';
       return (
