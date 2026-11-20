@@ -194,6 +194,7 @@ export interface IssuedTicket {
   isRedeemed: boolean;
   isCancelled: boolean;
   isRefunded: boolean;
+  refundLocked?: boolean;
   redeemedAt?: string | null;
   createdAt: string;
   orderItem?: {

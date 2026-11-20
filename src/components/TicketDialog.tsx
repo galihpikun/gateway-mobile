@@ -9,11 +9,12 @@ export function useTicketInfo(ticket: IssuedTicket) {
   const colors = useColors();
   const category = ticket.orderItem?.ticketType?.name ?? tr('Tiket', 'Ticket');
   const event = ticket.orderItem?.ticketType?.event;
-  const canScan = Boolean(ticket.ticketCode) && !ticket.isCancelled && !ticket.isRefunded && !ticket.isRedeemed;
+  const canScan = Boolean(ticket.ticketCode) && !ticket.refundLocked && !ticket.isCancelled && !ticket.isRefunded && !ticket.isRedeemed;
   const status = ticket.isRefunded ? tr('Dana dikembalikan', 'Refunded')
     : ticket.isCancelled ? tr('Dibatalkan', 'Cancelled')
       : ticket.isRedeemed ? tr('Sudah check-in', 'Checked in')
-        : canScan ? tr('Siap digunakan', 'Ready to use') : tr('QR tidak tersedia', 'QR unavailable');
+        : ticket.refundLocked ? tr('Terkunci karena refund', 'Locked for refund')
+          : canScan ? tr('Siap digunakan', 'Ready to use') : tr('QR tidak tersedia', 'QR unavailable');
   const tone = ticket.isRefunded || ticket.isCancelled ? colors.danger : canScan ? colors.success : colors.inkSecondary;
   return { event, category, canScan, status, tone };
 }
