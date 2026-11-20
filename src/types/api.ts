@@ -25,7 +25,7 @@ export type RefundStatus =
   | 'SUCCEEDED'
   | 'FAILED';
 
-export type RefundType = 'ORGANIZER_INITIATED' | 'CUSTOMER_REQUESTED';
+export type RefundType = 'EVENT_CANCELLATION' | 'CUSTOMER_REQUEST';
 
 export interface Refund {
   id: string;
@@ -134,6 +134,8 @@ export interface Event {
   description: string;
   location: string;
   previewVideoUrl?: string | null;
+  ticketBackgroundUrl?: string | null;
+  venueImageUrl?: string | null;
   venueLayout?: string | null;
   coverImageUrl: string;
   startDatetime: string;
@@ -165,7 +167,7 @@ export interface OrderItem {
   quantity: number;
   price: number | string;
   createdAt: string;
-  ticketType?: TicketType;
+  ticketType?: TicketType & { event?: Event };
   issuedTickets?: IssuedTicket[];
 }
 
@@ -181,6 +183,7 @@ export interface Order {
   createdAt: string;
   updatedAt?: string;
   orderItems?: OrderItem[];
+  refunds?: Refund[];
 }
 
 export interface IssuedTicket {
@@ -206,6 +209,7 @@ export interface IssuedTicket {
         startDatetime: string;
         endDatetime: string;
         coverImageUrl: string;
+        ticketBackgroundUrl?: string | null;
       };
     };
     order?: {

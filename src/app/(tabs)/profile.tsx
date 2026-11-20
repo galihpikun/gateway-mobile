@@ -1,3 +1,4 @@
+import { mobileLabels } from '../../lib/mobileLabels';
 /**
  * Gateway Mobile — Profile Screen
  * - View & Edit personal info (Full name, Avatar)
@@ -21,7 +22,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { authApi } from '../../lib/api';
-import { Colors } from '../../lib/theme';
+import { Action, Copy, Panel } from '../../components/Flow';
+import { usePreferences, useColors } from '../../context/Preferences';
+
 import {
   pickImageDocument,
   appendDocumentToFormData,
@@ -35,6 +38,7 @@ function ProfileRow({
   label: string;
   value: string | null | undefined;
 }) {
+  const Colors = useColors();
   return (
     <View
       style={{ borderBottomColor: Colors.line, borderBottomWidth: 1 }}
@@ -57,6 +61,9 @@ function ProfileRow({
 }
 
 export default function ProfileScreen() {
+  const ui = (label: string) => tr(mobileLabels[label] ?? label, label);
+  const Colors = useColors();
+  const { theme, language, setTheme, setLanguage, tr } = usePreferences();
   const router = useRouter();
   const { user, logout, loading, refreshUser } = useAuth();
 
@@ -82,6 +89,7 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Synchronize the editable draft when the authenticated account changes.
       setFullName(user.fullName || '');
       if (user.avatar) {
         setAvatarPreview(user.avatar);
@@ -106,18 +114,18 @@ export default function ProfileScreen() {
     if (Platform.OS === 'web') {
       if (
         typeof window !== 'undefined' &&
-        window.confirm('Are you sure you want to sign out of Gateway?')
+        window.confirm(ui('Are you sure you want to sign out of Gateway?'))
       ) {
         executeLogout();
       }
     } else {
       Alert.alert(
-        'Sign Out',
-        'Are you sure you want to sign out of Gateway?',
+        ui('Sign Out'),
+        ui('Are you sure you want to sign out of Gateway?'),
         [
           { text: 'Cancel', style: 'cancel' },
           {
-            text: 'Sign Out',
+            text: ui('Sign Out'),
             style: 'destructive',
             onPress: executeLogout,
           },
@@ -131,7 +139,7 @@ export default function ProfileScreen() {
     try {
       const doc = await pickImageDocument();
       if (doc) {
-        if (doc.size > 5 * 1024 * 1024) {
+        if ((doc.size ?? 0) > 5 * 1024 * 1024) {
           Alert.alert('File Too Large', 'Avatar image must be 5MB or less.');
           return;
         }
@@ -262,15 +270,11 @@ export default function ProfileScreen() {
           <Text
             style={{ color: Colors.inkPrimary }}
             className="font-bold text-xl tracking-tight"
-          >
-            Profile
-          </Text>
+          >{ui("Profile")}</Text>
           <Text
             style={{ color: Colors.inkSecondary }}
             className="text-xs font-mono mt-0.5 uppercase tracking-widest"
-          >
-            ACCOUNT DOSSIER
-          </Text>
+          >{ui("ACCOUNT DOSSIER")}</Text>
         </View>
 
         <View
@@ -295,6 +299,20 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40 }}
       >
+        <View className="mx-4 mt-4 gap-3">
+          <Panel>
+            <Copy bold>{tr('Pengaturan aplikasi', 'App preferences')}</Copy>
+            <View className="flex-row flex-wrap gap-2">
+              <Action label="Indonesia" quiet={language !== 'id'} onPress={() => setLanguage('id')} />
+              <Action label="English" quiet={language !== 'en'} onPress={() => setLanguage('en')} />
+              <Action label={tr('Gelap', 'Dark')} quiet={theme !== 'dark'} onPress={() => setTheme('dark')} />
+              <Action label={tr('Terang', 'Light')} quiet={theme !== 'light'} onPress={() => setTheme('light')} />
+            </View>
+          </Panel>
+          <Action quiet label={tr('Pesanan saya', 'My orders')} onPress={() => router.push('/orders')} />
+          {user?.role === 'ADMIN' && <Action label={tr('Dashboard admin', 'Admin dashboard')} onPress={() => router.push('/admin')} />}
+          {(user?.role === 'STAFF' || user?.role === 'ADMIN') && <Action label={tr('Scanner gerbang', 'Gate scanner')} onPress={() => router.push('/staff')} />}
+        </View>
         {/* Suspension warning */}
         {user?.isSuspended && (
           <View
@@ -308,9 +326,7 @@ export default function ProfileScreen() {
             <Text
               style={{ color: Colors.terracotta }}
               className="font-bold text-xs font-mono uppercase tracking-widest"
-            >
-              Account Suspended
-            </Text>
+            >{ui("Account Suspended")}</Text>
             {Boolean(user.suspendReason) && (
               <Text
                 style={{ color: Colors.danger }}
@@ -327,9 +343,7 @@ export default function ProfileScreen() {
           <Text
             style={{ color: Colors.inkSecondary }}
             className="text-xs font-mono uppercase tracking-widest mb-2"
-          >
-            Personal Information
-          </Text>
+          >{ui("Personal Information")}</Text>
 
           <View
             style={{
@@ -391,7 +405,7 @@ export default function ProfileScreen() {
                   style={{ color: Colors.gold }}
                   className="font-mono text-[11px] uppercase font-bold tracking-wider"
                 >
-                  {avatarDoc ? '✓ Image Attached' : 'Change Profile Picture'}
+                  {avatarDoc ? ui('✓ Image Attached') : ui('Change Profile Picture')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -409,9 +423,7 @@ export default function ProfileScreen() {
                 <Text
                   style={{ color: Colors.gold }}
                   className="font-mono text-xs font-bold text-center"
-                >
-                  Profile updated successfully.
-                </Text>
+                >{ui("Profile updated successfully.")}</Text>
               </View>
             )}
 
@@ -438,13 +450,11 @@ export default function ProfileScreen() {
               <Text
                 style={{ color: Colors.inkSecondary }}
                 className="font-mono text-[10px] uppercase tracking-wider mb-1"
-              >
-                Full Name
-              </Text>
+              >{ui("Full Name")}</Text>
               <TextInput
                 value={fullName}
                 onChangeText={setFullName}
-                placeholder="Your full name"
+                placeholder={ui("Your full name")}
                 placeholderTextColor={Colors.edge}
                 style={{
                   backgroundColor: Colors.canvas,
@@ -461,9 +471,7 @@ export default function ProfileScreen() {
               <Text
                 style={{ color: Colors.inkSecondary }}
                 className="font-mono text-[10px] uppercase tracking-wider mb-1"
-              >
-                Registered Email Address
-              </Text>
+              >{ui("Registered Email Address")}</Text>
               <TextInput
                 value={user?.email || ''}
                 editable={false}
@@ -479,7 +487,7 @@ export default function ProfileScreen() {
                 style={{ color: Colors.gold }}
                 className="font-mono text-[10px] mt-1"
               >
-                {user?.emailVerified ? 'Verified Account ✓' : 'Unverified'}
+                {user?.emailVerified ? ui('Verified Account ✓') : ui('Unverified')}
               </Text>
             </View>
 
@@ -501,7 +509,7 @@ export default function ProfileScreen() {
                 style={{ color: Colors.canvas }}
                 className="font-mono text-xs uppercase font-bold tracking-widest"
               >
-                {profileSaving ? 'Saving Changes...' : 'Save Profile Changes'}
+                {profileSaving ? ui('Saving Changes...') : ui('Save Profile Changes')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -512,9 +520,7 @@ export default function ProfileScreen() {
           <Text
             style={{ color: Colors.inkSecondary }}
             className="text-xs font-mono uppercase tracking-widest mb-2"
-          >
-            Security & Credentials
-          </Text>
+          >{ui("Security & Credentials")}</Text>
 
           <View
             style={{
@@ -527,15 +533,11 @@ export default function ProfileScreen() {
             <Text
               style={{ color: Colors.inkPrimary }}
               className="font-bold text-base mb-1"
-            >
-              Change Password
-            </Text>
+            >{ui("Change Password")}</Text>
             <Text
               style={{ color: Colors.inkSecondary }}
               className="text-xs font-mono leading-relaxed mb-3"
-            >
-              Dispatches a single-use verification code to your email address before updating credentials.
-            </Text>
+            >{ui("Dispatches a single-use verification code to your email address before updating credentials.")}</Text>
 
             {passSuccess && (
               <View
@@ -549,9 +551,7 @@ export default function ProfileScreen() {
                 <Text
                   style={{ color: Colors.gold }}
                   className="font-mono text-xs font-bold text-center"
-                >
-                  Password updated successfully.
-                </Text>
+                >{ui("Password updated successfully.")}</Text>
               </View>
             )}
 
@@ -594,8 +594,8 @@ export default function ProfileScreen() {
                   className="font-mono text-xs uppercase font-bold tracking-wider"
                 >
                   {passSaving
-                    ? 'DISPATCHING OTP...'
-                    : 'REQUEST PASSWORD CHANGE OTP'}
+                    ? ui('DISPATCHING OTP...')
+                    : ui('REQUEST PASSWORD CHANGE OTP')}
                 </Text>
               </TouchableOpacity>
             ) : (
@@ -604,8 +604,7 @@ export default function ProfileScreen() {
                   <Text
                     style={{ color: Colors.gold }}
                     className="font-mono text-[10px] uppercase tracking-wider mb-1 font-bold"
-                  >
-                    6-Digit OTP Code (Sent to {user?.email})
+                  >{ui("6-Digit OTP Code (Sent to")}{" "}{user?.email})
                   </Text>
                   <TextInput
                     value={otpCode}
@@ -628,14 +627,12 @@ export default function ProfileScreen() {
                   <Text
                     style={{ color: Colors.inkSecondary }}
                     className="font-mono text-[10px] uppercase tracking-wider mb-1"
-                  >
-                    New Password
-                  </Text>
+                  >{ui("New Password")}</Text>
                   <TextInput
                     value={newPassword}
                     onChangeText={setNewPassword}
                     secureTextEntry
-                    placeholder="Min 6 characters"
+                    placeholder={ui("Min 6 characters")}
                     placeholderTextColor={Colors.edge}
                     style={{
                       backgroundColor: Colors.canvas,
@@ -651,14 +648,12 @@ export default function ProfileScreen() {
                   <Text
                     style={{ color: Colors.inkSecondary }}
                     className="font-mono text-[10px] uppercase tracking-wider mb-1"
-                  >
-                    Confirm New Password
-                  </Text>
+                  >{ui("Confirm New Password")}</Text>
                   <TextInput
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
                     secureTextEntry
-                    placeholder="Re-enter new password"
+                    placeholder={ui("Re-enter new password")}
                     placeholderTextColor={Colors.edge}
                     style={{
                       backgroundColor: Colors.canvas,
@@ -684,9 +679,7 @@ export default function ProfileScreen() {
                     <Text
                       style={{ color: Colors.inkSecondary }}
                       className="font-mono text-xs uppercase"
-                    >
-                      Cancel
-                    </Text>
+                    >{ui("Cancel")}</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -706,7 +699,7 @@ export default function ProfileScreen() {
                       style={{ color: Colors.canvas }}
                       className="font-mono text-xs uppercase font-bold tracking-widest"
                     >
-                      {passSaving ? 'SAVING...' : 'CONFIRM PASSWORD'}
+                      {passSaving ? ui('SAVING...') : ui('CONFIRM PASSWORD')}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -720,9 +713,7 @@ export default function ProfileScreen() {
           <Text
             style={{ color: Colors.inkSecondary }}
             className="text-xs font-mono uppercase tracking-widest mb-2"
-          >
-            Account Metadata
-          </Text>
+          >{ui("Account Metadata")}</Text>
 
           <View
             style={{
@@ -744,13 +735,11 @@ export default function ProfileScreen() {
         </View>
 
         {/* Section 4: Promoter & Organizer Studio */}
-        <View className="px-4 pb-6">
+        {user?.role === 'USER' && <View className="px-4 pb-6">
           <Text
             style={{ color: Colors.inkSecondary }}
             className="text-xs font-mono uppercase tracking-widest mb-2"
-          >
-            Promoter & Organizer Studio
-          </Text>
+          >{ui("Promoter & Organizer Studio")}</Text>
 
           {user?.organizerProfile ? (
             <View
@@ -807,9 +796,7 @@ export default function ProfileScreen() {
                     <Text
                       style={{ color: Colors.canvas }}
                       className="font-mono text-xs font-bold uppercase tracking-widest"
-                    >
-                      Open Organizer Studio →
-                    </Text>
+                    >{ui("Open Organizer Studio →")}</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -825,9 +812,7 @@ export default function ProfileScreen() {
                     <Text
                       style={{ color: Colors.inkSecondary }}
                       className="font-mono text-[11px] uppercase tracking-wider"
-                    >
-                      View Verification Dossier
-                    </Text>
+                    >{ui("View Verification Dossier")}</Text>
                   </TouchableOpacity>
                 </View>
               ) : user.organizerProfile.status === 'PENDING' ? (
@@ -835,9 +820,7 @@ export default function ProfileScreen() {
                   <Text
                     style={{ color: Colors.inkSecondary }}
                     className="text-xs mb-3 leading-relaxed"
-                  >
-                    Your statutory documents are currently under compliance review.
-                  </Text>
+                  >{ui("Your statutory documents are currently under compliance review.")}</Text>
                   <TouchableOpacity
                     onPress={() => router.push('/organizer/onboarding')}
                     style={{
@@ -851,9 +834,7 @@ export default function ProfileScreen() {
                     <Text
                       style={{ color: Colors.gold }}
                       className="font-mono text-xs font-bold uppercase tracking-widest"
-                    >
-                      View Submitted Dossier →
-                    </Text>
+                    >{ui("View Submitted Dossier →")}</Text>
                   </TouchableOpacity>
                 </View>
               ) : (
@@ -862,8 +843,7 @@ export default function ProfileScreen() {
                     <Text
                       style={{ color: Colors.danger }}
                       className="font-mono text-xs mb-3"
-                    >
-                      Remark: {user.organizerProfile.rejectionReason}
+                    >{ui("Remark:")}{" "}{user.organizerProfile.rejectionReason}
                     </Text>
                   )}
                   <TouchableOpacity
@@ -875,9 +855,7 @@ export default function ProfileScreen() {
                     <Text
                       style={{ color: Colors.canvas }}
                       className="font-mono text-xs font-bold uppercase tracking-widest"
-                    >
-                      Reapply as Organizer →
-                    </Text>
+                    >{ui("Reapply as Organizer →")}</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -894,16 +872,11 @@ export default function ProfileScreen() {
               <Text
                 style={{ color: Colors.inkPrimary }}
                 className="font-bold text-base mb-1"
-              >
-                Host & Publish Events
-              </Text>
+              >{ui("Host & Publish Events")}</Text>
               <Text
                 style={{ color: Colors.inkSecondary }}
                 className="text-xs leading-relaxed mb-3"
-              >
-                Apply as an accredited event promoter to publish concerts, manage
-                ticketing tiers, and monitor attendance.
-              </Text>
+              >{ui("Apply as an accredited event promoter to publish concerts, manage ticketing tiers, and monitor attendance.")}</Text>
               <TouchableOpacity
                 onPress={() => router.push('/organizer/onboarding')}
                 style={{
@@ -915,13 +888,11 @@ export default function ProfileScreen() {
                 <Text
                   style={{ color: Colors.canvas }}
                   className="font-mono text-xs font-bold uppercase tracking-widest"
-                >
-                  Apply as Organizer →
-                </Text>
+                >{ui("Apply as Organizer →")}</Text>
               </TouchableOpacity>
             </View>
           )}
-        </View>
+        </View>}
 
         {/* Section 5: Sign Out */}
         <View className="px-4 pb-10">
@@ -943,16 +914,14 @@ export default function ProfileScreen() {
               style={{ color: Colors.terracotta }}
               className="font-bold text-sm uppercase tracking-widest font-mono"
             >
-              {loggingOut ? 'Signing out...' : 'Sign Out'}
+              {loggingOut ? ui('Signing out...') : ui('Sign Out')}
             </Text>
           </TouchableOpacity>
 
           <Text
             style={{ color: Colors.inkSecondary }}
             className="text-xs text-center font-mono mt-4"
-          >
-            GATEWAY · THE LIVE EXPERIENCE
-          </Text>
+          >{ui("GATEWAY · THE LIVE EXPERIENCE")}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

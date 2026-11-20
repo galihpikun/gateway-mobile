@@ -1,3 +1,4 @@
+import { mobileLabels } from '../../lib/mobileLabels';
 /**
  * Gateway Mobile — Event Detail Screen
  */
@@ -8,17 +9,26 @@ import {
   ScrollView,
   ActivityIndicator,
   TouchableOpacity,
+  Pressable,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import { useAuth } from '../../context/AuthContext';
+import { usePreferences, useColors } from '../../context/Preferences';
+import { canBuy } from '../../lib/checkout';
+import { ConcertMedia } from '../../components/ConcertMedia';
 import { eventApi } from '../../lib/api';
 import { Event } from '../../types/api';
-import { Colors } from '../../lib/theme';
+
 
 export default function EventDetailScreen() {
+  const ui = (label: string) => tr(mobileLabels[label] ?? label, label);
+  const Colors = useColors();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { user } = useAuth();
+  const { tr } = usePreferences();
 
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,7 +61,7 @@ export default function EventDetailScreen() {
 
   const formatPrice = (price: number | string) => {
     const p = Number(price);
-    if (p === 0) return 'Free';
+    if (p === 0) return ui('Free');
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
@@ -70,17 +80,13 @@ export default function EventDetailScreen() {
   if (error || !event) {
     return (
       <SafeAreaView className="flex-1 bg-canvas items-center justify-center px-6">
-        <Text className="text-ink-primary font-bold text-xl mb-2">
-          Event not found
-        </Text>
-        <Text className="text-ink-secondary text-xs text-center mb-6">
-          This event could not be loaded. It may have been removed.
-        </Text>
+        <Text className="text-ink-primary font-bold text-xl mb-2">{ui("Event not found")}</Text>
+        <Text className="text-ink-secondary text-xs text-center mb-6">{ui("This event could not be loaded. It may have been removed.")}</Text>
         <TouchableOpacity
           onPress={() => router.back()}
           className="border border-edge px-5 py-2.5 rounded-sm"
         >
-          <Text className="text-ink-primary text-xs font-mono">Go Back</Text>
+          <Text className="text-ink-primary text-xs font-mono">{ui("Go Back")}</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -181,17 +187,16 @@ export default function EventDetailScreen() {
             <View className="flex-row gap-3">
               <Text className="text-ink-secondary text-sm w-5">🔄</Text>
               <Text className="text-ink-secondary text-xs font-mono flex-1">
-                {event.isRefundable ? 'Refundable' : 'Non-refundable'}
+                {event.isRefundable ? ui('Refundable') : ui('Non-refundable')}
               </Text>
             </View>
           </View>
 
           {/* Ticket Types */}
+          <ConcertMedia event={event} />
           {event.ticketTypes && event.ticketTypes.length > 0 && (
             <View className="mb-5">
-              <Text className="text-ink-secondary text-xs font-mono uppercase tracking-widest mb-3">
-                Ticket Types
-              </Text>
+              <Text className="text-ink-secondary text-xs font-mono uppercase tracking-widest mb-3">{ui("Ticket Types")}</Text>
               <View className="gap-2">
                 {event.ticketTypes.map((type) => (
                   <View
@@ -205,7 +210,7 @@ export default function EventDetailScreen() {
                       <Text className="text-ink-secondary text-xs font-mono mt-0.5">
                         {type.availableQuota > 0
                           ? `${type.availableQuota} available`
-                          : 'Sold out'}
+                          : ui('Sold out')}
                       </Text>
                     </View>
                     <View className="items-end">
@@ -221,9 +226,7 @@ export default function EventDetailScreen() {
 
           {/* Description */}
           <View className="mb-5">
-            <Text className="text-ink-secondary text-xs font-mono uppercase tracking-widest mb-3">
-              About this Event
-            </Text>
+            <Text className="text-ink-secondary text-xs font-mono uppercase tracking-widest mb-3">{ui("About this Event")}</Text>
             <Text
               className="text-ink-secondary text-sm leading-relaxed"
               style={{ lineHeight: 20 }}
@@ -235,7 +238,7 @@ export default function EventDetailScreen() {
       </ScrollView>
 
       {/* Get Tickets CTA */}
-      {event.status === 'PUBLISHED' &&
+      {canBuy(user, event) &&
         event.ticketTypes &&
         event.ticketTypes.some((t) => t.availableQuota > 0) && (
           <View
@@ -249,19 +252,17 @@ export default function EventDetailScreen() {
           >
             <View className="flex-row items-center justify-between mb-3">
               <View>
-                <Text className="text-ink-secondary text-xs font-mono uppercase tracking-widest">
-                  From
-                </Text>
+                <Text className="text-ink-secondary text-xs font-mono uppercase tracking-widest">{ui("From")}</Text>
                 <Text className="text-gold font-bold text-xl">
                   {(() => {
                     const prices =
                       event.ticketTypes
                         ?.filter((t) => t.availableQuota > 0)
                         .map((t) => Number(t.price)) || [];
-                    if (!prices.length) return 'Sold out';
+                    if (!prices.length) return ui('Sold out');
                     const min = Math.min(...prices);
                     return min === 0
-                      ? 'Free'
+                      ? ui('Free')
                       : new Intl.NumberFormat('id-ID', {
                           style: 'currency',
                           currency: 'IDR',
@@ -270,14 +271,11 @@ export default function EventDetailScreen() {
                   })()}
                 </Text>
               </View>
-              <TouchableOpacity
-                className="bg-gold px-6 py-3 rounded-sm"
-                activeOpacity={0.85}
-              >
-                <Text className="text-canvas font-bold text-sm uppercase tracking-widest">
-                  Get Tickets
-                </Text>
-              </TouchableOpacity>
+              <Link href={{ pathname: '/checkout/[id]', params: { id: event.id } }} asChild>
+                <Pressable accessibilityRole="link" className="bg-gold px-6 py-3 rounded-sm">
+                  <Text className="text-action-ink font-bold text-sm uppercase tracking-widest">{tr('Beli tiket', 'Get tickets')}</Text>
+                </Pressable>
+              </Link>
             </View>
           </View>
         )}

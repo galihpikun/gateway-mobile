@@ -1,8 +1,9 @@
+import { mobileLabels } from '../../lib/mobileLabels';
 /**
  * Gateway Mobile — My Tickets Screen
  * Shows user's issued tickets from the API.
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,12 +13,17 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
+import { Image } from 'expo-image';
+import QRCode from 'react-native-qrcode-svg';
 import { issuedTicketApi } from '../../lib/api';
 import { IssuedTicket } from '../../types/api';
-import { Colors } from '../../lib/theme';
+import { usePreferences, useColors } from '../../context/Preferences';
 
 function TicketItem({ ticket }: { ticket: IssuedTicket }) {
+  const { language: uiLanguage } = usePreferences();
+  const ui = (label: string) => uiLanguage === 'id' ? mobileLabels[label] ?? label : label;
+  const Colors = useColors();
   const event = ticket.orderItem?.ticketType?.event;
   const ticketType = ticket.orderItem?.ticketType;
 
@@ -37,22 +43,23 @@ function TicketItem({ ticket }: { ticket: IssuedTicket }) {
       : Colors.gold;
 
   const statusLabel = ticket.isRedeemed
-    ? 'REDEEMED'
+    ? ui('REDEEMED')
     : ticket.isCancelled
-      ? 'CANCELLED'
+      ? ui('CANCELLED')
       : ticket.isRefunded
-        ? 'REFUNDED'
-        : 'VALID';
+        ? ui('REFUNDED')
+        : ui('VALID');
 
   return (
     <View className="bg-surface border border-line rounded-sm mb-3 overflow-hidden">
+      {!!event?.ticketBackgroundUrl && <Image source={event.ticketBackgroundUrl} style={{ width: '100%', aspectRatio: 3 }} contentFit="cover" />}
       {/* Ticket header stripe */}
       <View
         style={{ backgroundColor: statusColor + '20', borderBottomWidth: 1, borderBottomColor: Colors.line }}
         className="px-4 py-2 flex-row items-center justify-between"
       >
         <Text className="text-ink-secondary text-xs font-mono uppercase tracking-widest">
-          {ticketType?.name ?? 'Ticket'}
+          {ticketType?.name ?? ui('Ticket')}
         </Text>
         <View
           style={{ backgroundColor: statusColor + '30', borderColor: statusColor, borderWidth: 1 }}
@@ -67,7 +74,7 @@ function TicketItem({ ticket }: { ticket: IssuedTicket }) {
       <View className="p-4">
         {/* Event name */}
         <Text className="text-ink-primary font-bold text-base mb-2" numberOfLines={2}>
-          {event?.title ?? 'Unknown Event'}
+          {event?.title ?? ui('Unknown Event')}
         </Text>
 
         {/* Details */}
@@ -90,11 +97,14 @@ function TicketItem({ ticket }: { ticket: IssuedTicket }) {
           )}
         </View>
 
+        {!ticket.isRedeemed && !ticket.isCancelled && !ticket.isRefunded && Boolean(ticket.ticketCode) && (
+          <View className="self-center mb-4 p-3 bg-white rounded-sm" accessibilityLabel={uiLanguage === 'id' ? 'QR tiket' : 'Ticket QR code'}>
+            <QRCode value={ticket.ticketCode} size={176} quietZone={7} />
+          </View>
+        )}
         {/* Ticket code */}
         <View className="border-t border-line pt-3 flex-row items-center justify-between">
-          <Text className="text-ink-secondary text-xs font-mono uppercase tracking-widest">
-            Code
-          </Text>
+          <Text className="text-ink-secondary text-xs font-mono uppercase tracking-widest">{ui("Code")}</Text>
           <Text className="text-gold text-xs font-mono font-bold tracking-widest">
             {ticket.ticketCode}
           </Text>
@@ -105,6 +115,9 @@ function TicketItem({ ticket }: { ticket: IssuedTicket }) {
 }
 
 export default function MyTicketsScreen() {
+  const { language: uiLanguage } = usePreferences();
+  const ui = (label: string) => uiLanguage === 'id' ? mobileLabels[label] ?? label : label;
+  const Colors = useColors();
   const [tickets, setTickets] = useState<IssuedTicket[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -123,9 +136,7 @@ export default function MyTicketsScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchTickets();
-  }, [fetchTickets]);
+  useFocusEffect(useCallback(() => { void fetchTickets(); }, [fetchTickets]));
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -140,20 +151,14 @@ export default function MyTicketsScreen() {
     >
       {/* Header */}
       <View className="px-4 pt-4 pb-3 border-b border-line">
-        <Text className="text-ink-primary font-bold text-xl tracking-tight">
-          My Tickets
-        </Text>
-        <Text className="text-ink-secondary text-xs font-mono mt-0.5 uppercase tracking-widest">
-          Your issued tickets
-        </Text>
+        <Text className="text-ink-primary font-bold text-xl tracking-tight">{ui("My Tickets")}</Text>
+        <Text className="text-ink-secondary text-xs font-mono mt-0.5 uppercase tracking-widest">{ui("Your issued tickets")}</Text>
       </View>
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color={Colors.gold} />
-          <Text className="text-ink-secondary text-xs font-mono mt-3 uppercase tracking-widest">
-            Loading tickets...
-          </Text>
+          <Text className="text-ink-secondary text-xs font-mono mt-3 uppercase tracking-widest">{ui("Loading tickets...")}</Text>
         </View>
       ) : (
         <ScrollView
@@ -169,12 +174,8 @@ export default function MyTicketsScreen() {
         >
           {error ? (
             <View className="border border-line p-8 items-center rounded-sm">
-              <Text className="text-ink-primary font-bold mb-2">
-                Could not load tickets
-              </Text>
-              <Text className="text-ink-secondary text-xs text-center mb-4">
-                Please check your connection and try again.
-              </Text>
+              <Text className="text-ink-primary font-bold mb-2">{ui("Could not load tickets")}</Text>
+              <Text className="text-ink-secondary text-xs text-center mb-4">{ui("Please check your connection and try again.")}</Text>
               <TouchableOpacity
                 onPress={() => {
                   setLoading(true);
@@ -182,25 +183,19 @@ export default function MyTicketsScreen() {
                 }}
                 className="border border-edge px-4 py-2 rounded-sm"
               >
-                <Text className="text-ink-primary text-xs font-mono">
-                  Try again
-                </Text>
+                <Text className="text-ink-primary text-xs font-mono">{ui("Try again")}</Text>
               </TouchableOpacity>
             </View>
           ) : tickets.length === 0 ? (
             <View className="border border-line p-8 items-center rounded-sm">
               <Text className="text-4xl mb-4">🎫</Text>
-              <Text className="text-ink-primary font-bold text-lg mb-2">
-                No tickets yet
-              </Text>
-              <Text className="text-ink-secondary text-xs text-center">
-                Purchase tickets to concerts and they'll appear here.
-              </Text>
+              <Text className="text-ink-primary font-bold text-lg mb-2">{ui("No tickets yet")}</Text>
+              <Text className="text-ink-secondary text-xs text-center">{ui("Purchase tickets to concerts and they'll appear here.")}</Text>
             </View>
           ) : (
             <View className="pb-6">
               <Text className="text-ink-secondary text-xs font-mono mb-4">
-                {tickets.length} ticket{tickets.length !== 1 ? 's' : ''} total
+                {tickets.length}{ui("ticket")}{tickets.length !== 1 ? 's' : ''} total
               </Text>
               {tickets.map((ticket) => (
                 <TicketItem key={ticket.id} ticket={ticket} />

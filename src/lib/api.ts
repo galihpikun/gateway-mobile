@@ -2,9 +2,9 @@
  * Gateway Mobile — API Client
  * Mirrors gateway-fe/src/lib/api.ts, adapted for React Native.
  *
- * Backend base: http://localhost:3001 (emulator) or 10.0.2.2:3001 (Android physical)
  * Routes are mounted at both /api and / — we use /api prefix.
  */
+import { backendUrl } from './backend';
 import { getToken, setToken, removeToken } from './tokenStore';
 import {
   User,
@@ -18,10 +18,6 @@ import {
   OrganizerProfile,
   Refund,
 } from '../types/api';
-
-// For Android emulator use 10.0.2.2, for iOS simulator use localhost.
-// In production this would be configured via environment / EAS.
-const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? 'http://10.0.2.2:3001';
 
 export class ApiError extends Error {
   statusCode: number;
@@ -51,10 +47,15 @@ export async function apiFetch<T>(
   }
 
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  const url = `${API_BASE}/api${cleanEndpoint}`;
+  const url = backendUrl() + cleanEndpoint;
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  if (options.signal?.aborted) abort();
+  options.signal?.addEventListener('abort', abort, { once: true });
+  const timeout = setTimeout(abort, options.body instanceof FormData ? 120_000 : 20_000);
 
   try {
-    const res = await fetch(url, { ...options, headers });
+    const res = await fetch(url, { ...options, headers, signal: controller.signal });
 
     const contentType = res.headers.get('content-type');
     let data: unknown = null;
@@ -76,8 +77,11 @@ export async function apiFetch<T>(
     return data as T;
   } catch (err) {
     if (err instanceof ApiError) throw err;
-    const message = err instanceof Error ? err.message : 'Network error';
-    throw new ApiError(message, 500);
+    const message = controller.signal.aborted ? 'Permintaan ke Gateway melewati batas waktu.' : 'Gateway tidak dapat dihubungi. Periksa jaringan dan alamat backend.';
+    throw new ApiError(message, 0);
+  } finally {
+    clearTimeout(timeout);
+    options.signal?.removeEventListener('abort', abort);
   }
 }
 
@@ -330,7 +334,7 @@ export const ticketTypeApi = {
     },
   ): Promise<TicketType> => {
     return apiFetch<TicketType>(`/ticket-types/${id}`, {
-      method: 'PATCH',
+      method: 'PUT',
       body: JSON.stringify(data),
     });
   },
@@ -344,6 +348,14 @@ export const ticketTypeApi = {
 // ORDERS API
 // ==========================================
 export const orderApi = {
+  create: async (data: {
+    items: { ticketTypeId: string; quantity: number }[];
+    buyer: { fullName: string; email: string; phone: string; identityType: string; identityNumber: string; language: 'id' | 'en' };
+    idempotencyKey: string;
+  }) => {
+    const response = await apiFetch<{ order: Order; paymentUrl?: string }>('/orders', { method: 'POST', body: JSON.stringify(data) });
+    return { ...response.order, paymentUrl: response.paymentUrl ?? response.order.paymentUrl };
+  },
   getMyOrders: async (): Promise<PaginatedResponse<Order> | Order[]> => {
     return apiFetch<PaginatedResponse<Order> | Order[]>('/orders');
   },
@@ -400,6 +412,7 @@ export const organizerApi = {
 // REFUNDS API
 // ==========================================
 export const refundApi = {
+  create: (orderId: string, reason: string) => apiFetch<{ message: string }>('/refunds', { method: 'POST', body: JSON.stringify({ orderId, reason }) }),
   getOrganizerRefunds: async (params: {
     page: number;
     limit: number;

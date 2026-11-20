@@ -1,3 +1,4 @@
+import { mobileLabels } from '../../lib/mobileLabels';
 /**
  * Gateway Mobile — Organizer Refunds Screen
  * Mirrors gateway-fe/src/app/organizer/refunds/page.tsx
@@ -9,16 +10,14 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   RefreshControl,
-  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { refundApi } from '../../lib/api';
 import { Refund } from '../../types/api';
-import { Colors } from '../../lib/theme';
+import { usePreferences, useColors } from '../../context/Preferences';
 
 const STATUS_FILTERS = [
   { label: 'ALL', value: 'ALL' },
@@ -29,6 +28,9 @@ const STATUS_FILTERS = [
 ];
 
 export default function OrganizerRefundsScreen() {
+  const { language: uiLanguage } = usePreferences();
+  const ui = (label: string) => uiLanguage === 'id' ? mobileLabels[label] ?? label : label;
+  const Colors = useColors();
   const router = useRouter();
   const { user, isOrganizerApproved, isAdmin, loading: authLoading } = useAuth();
 
@@ -39,12 +41,7 @@ export default function OrganizerRefundsScreen() {
   const [totalPages, setTotalPages] = useState(1);
   const [statusFilter, setStatusFilter] = useState('ALL');
 
-  const [processingId, setProcessingId] = useState<string | null>(null);
-  const [rejectingId, setRejectingId] = useState<string | null>(null);
-  const [rejectReason, setRejectReason] = useState('');
-
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading) {
@@ -67,7 +64,8 @@ export default function OrganizerRefundsScreen() {
       });
       setRefunds(res.data || []);
       setTotalPages(res.meta?.totalPages || 1);
-    } catch {
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : "Unable to load refunds.");
       setRefunds([]);
     } finally {
       setLoading(false);
@@ -77,6 +75,7 @@ export default function OrganizerRefundsScreen() {
 
   useEffect(() => {
     if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Set loading before fetching the selected page and status.
       fetchRefunds();
     }
   }, [user, fetchRefunds]);
@@ -84,58 +83,6 @@ export default function OrganizerRefundsScreen() {
   const onRefresh = () => {
     setRefreshing(true);
     fetchRefunds();
-  };
-
-  const handleApprove = (id: string) => {
-    Alert.alert(
-      'Approve Refund',
-      'Approve this refund request? Funds will be credited back to the attendee.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Approve',
-          onPress: async () => {
-            setProcessingId(id);
-            setError(null);
-            setSuccess(null);
-            try {
-              await refundApi.approveRefund(id);
-              setSuccess('Refund request approved successfully.');
-              await fetchRefunds();
-            } catch (err: unknown) {
-              const msg =
-                err instanceof Error ? err.message : 'Failed to approve refund';
-              setError(msg);
-            } finally {
-              setProcessingId(null);
-            }
-          },
-        },
-      ],
-    );
-  };
-
-  const handleConfirmReject = async (id: string) => {
-    if (!rejectReason.trim()) {
-      Alert.alert('Required', 'Please enter a rejection reason.');
-      return;
-    }
-    setProcessingId(id);
-    setError(null);
-    setSuccess(null);
-    try {
-      await refundApi.rejectRefund(id, rejectReason.trim());
-      setSuccess('Refund request rejected.');
-      setRejectingId(null);
-      setRejectReason('');
-      await fetchRefunds();
-    } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : 'Failed to reject refund';
-      setError(msg);
-    } finally {
-      setProcessingId(null);
-    }
   };
 
   const formatDate = (isoString?: string) => {
@@ -183,16 +130,12 @@ export default function OrganizerRefundsScreen() {
           <Text
             style={{ color: Colors.inkSecondary }}
             className="font-mono text-xs uppercase tracking-wider"
-          >
-            ← Back
-          </Text>
+          >{ui("← Back")}</Text>
         </TouchableOpacity>
         <Text
           style={{ color: Colors.gold }}
           className="font-mono text-xs uppercase tracking-widest font-bold"
-        >
-          REFUND DESK
-        </Text>
+        >{ui("REFUND DESK")}</Text>
       </View>
 
       <ScrollView
@@ -214,15 +157,11 @@ export default function OrganizerRefundsScreen() {
           <Text
             style={{ color: Colors.inkSecondary }}
             className="font-mono text-xs uppercase tracking-widest mb-1"
-          >
-            PROMOTER DESK // FINANCIAL SETTLEMENTS
-          </Text>
+          >{ui("PROMOTER DESK // FINANCIAL SETTLEMENTS")}</Text>
           <Text
             style={{ color: Colors.inkPrimary }}
             className="text-2xl font-bold tracking-tight mb-3"
-          >
-            Attendee Refund Requests
-          </Text>
+          >{ui("Attendee Refund Requests")}</Text>
 
           {/* Status Filters Scroll */}
           <ScrollView
@@ -282,23 +221,7 @@ export default function OrganizerRefundsScreen() {
           </View>
         )}
 
-        {Boolean(success) && (
-          <View
-            style={{
-              backgroundColor: Colors.gold + '20',
-              borderColor: Colors.gold,
-              borderWidth: 1,
-            }}
-            className="p-3 mb-4 rounded-sm"
-          >
-            <Text
-              style={{ color: Colors.gold }}
-              className="font-mono text-xs font-bold"
-            >
-              {success}
-            </Text>
-          </View>
-        )}
+
 
         {/* Content */}
         {loading && !refreshing ? (
@@ -307,9 +230,7 @@ export default function OrganizerRefundsScreen() {
             <Text
               style={{ color: Colors.inkSecondary }}
               className="font-mono text-xs uppercase tracking-widest mt-3"
-            >
-              Loading refund requests...
-            </Text>
+            >{ui("Loading refund requests...")}</Text>
           </View>
         ) : refunds.length === 0 ? (
           <View
@@ -323,9 +244,7 @@ export default function OrganizerRefundsScreen() {
             <Text
               style={{ color: Colors.inkSecondary }}
               className="font-mono text-xs uppercase tracking-widest font-bold mb-2 text-center"
-            >
-              NO REFUND REQUESTS FOUND
-            </Text>
+            >{ui("NO REFUND REQUESTS FOUND")}</Text>
             <Text
               style={{ color: Colors.inkSecondary }}
               className="text-xs text-center leading-relaxed"
@@ -339,8 +258,6 @@ export default function OrganizerRefundsScreen() {
           <View className="space-y-4">
             {refunds.map((refund) => {
               const statusColor = getStatusColor(refund.status);
-              const isProcessing = processingId === refund.id;
-              const isRejecting = rejectingId === refund.id;
 
               return (
                 <View
@@ -386,16 +303,14 @@ export default function OrganizerRefundsScreen() {
                   <Text
                     style={{ color: Colors.inkSecondary }}
                     className="font-mono text-[11px] mb-0.5"
-                  >
-                    Order #{refund.order?.orderNumber || refund.orderId} ·{' '}
+                  >{ui("Order #")}{refund.order?.orderNumber || refund.orderId} ·{' '}
                     {formatDate(refund.createdAt)}
                   </Text>
 
                   <Text
                     style={{ color: Colors.inkSecondary }}
                     className="font-mono text-[11px] mb-2"
-                  >
-                    Applicant: {refund.requestedBy?.fullName} ({refund.requestedBy?.email})
+                  >{ui("Applicant:")}{" "}{refund.requestedBy?.fullName} ({refund.requestedBy?.email})
                   </Text>
 
                   <View
@@ -409,14 +324,12 @@ export default function OrganizerRefundsScreen() {
                     <Text
                       style={{ color: Colors.inkSecondary }}
                       className="font-mono text-[9px] uppercase tracking-wider mb-0.5"
-                    >
-                      Attendee Stated Reason
-                    </Text>
+                    >{ui("Attendee Stated Reason")}</Text>
                     <Text
                       style={{ color: Colors.inkPrimary }}
                       className="text-xs leading-relaxed"
                     >
-                      "{refund.reason}"
+                      &quot;{refund.reason}&quot;
                     </Text>
                   </View>
 
@@ -424,109 +337,10 @@ export default function OrganizerRefundsScreen() {
                     <Text
                       style={{ color: Colors.terracotta }}
                       className="font-mono text-[11px] mb-2"
-                    >
-                      Rejection Remark: {refund.adminReason}
+                    >{ui("Rejection Remark:")}{" "}{refund.adminReason}
                     </Text>
                   )}
 
-                  {/* Actions for PENDING_APPROVAL */}
-                  {refund.status === 'PENDING_APPROVAL' && (
-                    <View
-                      style={{
-                        borderTopColor: Colors.line,
-                        borderTopWidth: 1,
-                        paddingTop: 10,
-                      }}
-                    >
-                      {isRejecting ? (
-                        <View className="space-y-2">
-                          <TextInput
-                            value={rejectReason}
-                            onChangeText={setRejectReason}
-                            placeholder="State reason for rejecting refund..."
-                            placeholderTextColor={Colors.edge}
-                            style={{
-                              backgroundColor: Colors.canvas,
-                              borderColor: Colors.line,
-                              borderWidth: 1,
-                              color: Colors.inkPrimary,
-                            }}
-                            className="px-3 py-2 rounded-sm text-xs"
-                          />
-                          <View className="flex-row justify-end gap-2">
-                            <TouchableOpacity
-                              onPress={() => setRejectingId(null)}
-                              style={{
-                                borderColor: Colors.line,
-                                borderWidth: 1,
-                              }}
-                              className="px-3 py-1.5 rounded-sm"
-                            >
-                              <Text
-                                style={{ color: Colors.inkSecondary }}
-                                className="font-mono text-xs uppercase"
-                              >
-                                Cancel
-                              </Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                              onPress={() => handleConfirmReject(refund.id)}
-                              disabled={isProcessing}
-                              style={{ backgroundColor: Colors.terracotta }}
-                              className="px-3 py-1.5 rounded-sm"
-                            >
-                              <Text
-                                style={{ color: Colors.canvas }}
-                                className="font-mono text-xs uppercase font-bold"
-                              >
-                                Confirm Rejection
-                              </Text>
-                            </TouchableOpacity>
-                          </View>
-                        </View>
-                      ) : (
-                        <View className="flex-row items-center justify-end gap-2">
-                          <TouchableOpacity
-                            onPress={() => setRejectingId(refund.id)}
-                            style={{
-                              borderColor: Colors.terracotta,
-                              borderWidth: 1,
-                            }}
-                            className="px-3 py-2 rounded-sm"
-                            activeOpacity={0.7}
-                          >
-                            <Text
-                              style={{ color: Colors.terracotta }}
-                              className="font-mono text-xs uppercase font-bold"
-                            >
-                              Reject
-                            </Text>
-                          </TouchableOpacity>
-
-                          <TouchableOpacity
-                            onPress={() => handleApprove(refund.id)}
-                            disabled={isProcessing}
-                            style={{ backgroundColor: Colors.gold }}
-                            className="px-4 py-2 rounded-sm flex-row items-center gap-1.5"
-                            activeOpacity={0.8}
-                          >
-                            {isProcessing && (
-                              <ActivityIndicator
-                                size="small"
-                                color={Colors.canvas}
-                              />
-                            )}
-                            <Text
-                              style={{ color: Colors.canvas }}
-                              className="font-mono text-xs uppercase font-black"
-                            >
-                              Approve Refund
-                            </Text>
-                          </TouchableOpacity>
-                        </View>
-                      )}
-                    </View>
-                  )}
                 </View>
               );
             })}
@@ -548,16 +362,13 @@ export default function OrganizerRefundsScreen() {
                   <Text
                     style={{ color: Colors.inkPrimary }}
                     className="font-mono text-xs uppercase"
-                  >
-                    Previous
-                  </Text>
+                  >{ui("Previous")}</Text>
                 </TouchableOpacity>
 
                 <Text
                   style={{ color: Colors.inkSecondary }}
                   className="font-mono text-xs"
-                >
-                  Page {page} of {totalPages}
+                >{ui("Page")}{" "}{page}{ui("of")}{" "}{totalPages}
                 </Text>
 
                 <TouchableOpacity
@@ -574,9 +385,7 @@ export default function OrganizerRefundsScreen() {
                   <Text
                     style={{ color: Colors.inkPrimary }}
                     className="font-mono text-xs uppercase"
-                  >
-                    Next
-                  </Text>
+                  >{ui("Next")}</Text>
                 </TouchableOpacity>
               </View>
             )}

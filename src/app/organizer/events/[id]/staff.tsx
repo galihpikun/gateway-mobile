@@ -1,3 +1,4 @@
+import { mobileLabels } from '../../../../lib/mobileLabels';
 /**
  * Gateway Mobile — Event Staff Roster Screen
  * Mirrors gateway-fe/src/app/organizer/events/[id]/staff/page.tsx
@@ -17,7 +18,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../../../context/AuthContext';
 import { organizerApi, eventApi } from '../../../../lib/api';
 import { User, Event } from '../../../../types/api';
-import { Colors } from '../../../../lib/theme';
+import { usePreferences, useColors } from '../../../../context/Preferences';
 
 interface StaffItem {
   id: string;
@@ -36,6 +37,9 @@ interface StaffItem {
 }
 
 export default function EventStaffScreen() {
+  const { language: uiLanguage } = usePreferences();
+  const ui = (label: string) => uiLanguage === 'id' ? mobileLabels[label] ?? label : label;
+  const Colors = useColors();
   const { id: eventId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user, isOrganizerApproved, loading: authLoading } = useAuth();
@@ -90,6 +94,7 @@ export default function EventStaffScreen() {
 
   useEffect(() => {
     if (user && isOrganizerApproved && eventId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Set loading before fetching assignments for the requested event.
       loadData();
     }
   }, [user, isOrganizerApproved, eventId, loadData]);
@@ -167,9 +172,7 @@ export default function EventStaffScreen() {
         <Text
           style={{ color: Colors.inkSecondary }}
           className="font-mono text-xs uppercase tracking-widest mt-4"
-        >
-          Loading staff roster...
-        </Text>
+        >{ui("Loading staff roster...")}</Text>
       </SafeAreaView>
     );
   }
@@ -193,16 +196,12 @@ export default function EventStaffScreen() {
           <Text
             style={{ color: Colors.inkSecondary }}
             className="font-mono text-xs uppercase tracking-wider"
-          >
-            ← Back
-          </Text>
+          >{ui("← Back")}</Text>
         </TouchableOpacity>
         <Text
           style={{ color: Colors.gold }}
           className="font-mono text-xs uppercase tracking-widest font-bold"
-        >
-          STAFF ROSTER
-        </Text>
+        >{ui("STAFF ROSTER")}</Text>
       </View>
 
       <ScrollView
@@ -217,21 +216,16 @@ export default function EventStaffScreen() {
           <Text
             style={{ color: Colors.inkSecondary }}
             className="font-mono text-xs uppercase tracking-widest mb-1"
-          >
-            GATE SCANNING ACCESS // {event?.title}
+          >{ui("GATE SCANNING ACCESS //")}{" "}{event?.title}
           </Text>
           <Text
             style={{ color: Colors.inkPrimary }}
             className="text-2xl font-bold tracking-tight mb-1"
-          >
-            Manage Scanning Staff
-          </Text>
+          >{ui("Manage Scanning Staff")}</Text>
           <Text
             style={{ color: Colors.inkSecondary }}
             className="text-xs font-mono"
-          >
-            Authorize event crew members to redeem and scan attendee QR passes at gates.
-          </Text>
+          >{ui("Authorize event crew members to redeem and scan attendee QR passes at gates.")}</Text>
         </View>
 
         {Boolean(error) && (
@@ -282,15 +276,13 @@ export default function EventStaffScreen() {
           <Text
             style={{ color: Colors.gold }}
             className="font-mono text-xs font-bold uppercase tracking-widest mb-3"
-          >
-            + Onboard Crew Member
-          </Text>
+          >{ui("+ Onboard Crew Member")}</Text>
 
           <View className="flex-row gap-2 mb-3">
             <TextInput
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholder="Search by full name or email"
+              placeholder={ui("Search by full name or email")}
               placeholderTextColor={Colors.edge}
               style={{
                 backgroundColor: Colors.canvas,
@@ -313,9 +305,7 @@ export default function EventStaffScreen() {
                 <Text
                   style={{ color: Colors.canvas }}
                   className="font-mono text-xs font-bold uppercase"
-                >
-                  Search
-                </Text>
+                >{ui("Search")}</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -385,17 +375,14 @@ export default function EventStaffScreen() {
           <Text
             style={{ color: Colors.gold }}
             className="font-mono text-xs font-bold uppercase tracking-widest mb-3"
-          >
-            Active Gate Scanning Crew ({activeStaff.length})
+          >{ui("Active Gate Scanning Crew (")}{activeStaff.length})
           </Text>
 
           {activeStaff.length === 0 ? (
             <Text
               style={{ color: Colors.inkSecondary }}
               className="text-xs font-mono py-2"
-            >
-              No active scanning staff assigned to this event yet.
-            </Text>
+            >{ui("No active scanning staff assigned to this event yet.")}</Text>
           ) : (
             <View className="space-y-2">
               {activeStaff.map((staff) => (
@@ -458,8 +445,7 @@ export default function EventStaffScreen() {
             <Text
               style={{ color: Colors.inkSecondary }}
               className="font-mono text-xs font-bold uppercase tracking-widest mb-3"
-            >
-              Pending Invitations ({pendingStaff.length})
+            >{ui("Pending Invitations (")}{pendingStaff.length})
             </Text>
             {pendingStaff.map((staff) => (
               <View
@@ -496,9 +482,7 @@ export default function EventStaffScreen() {
                   <Text
                     style={{ color: Colors.inkSecondary }}
                     className="font-mono text-[9px] uppercase font-bold"
-                  >
-                    Pending
-                  </Text>
+                  >{ui("Pending")}</Text>
                 </View>
               </View>
             ))}

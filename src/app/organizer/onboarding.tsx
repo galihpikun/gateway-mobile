@@ -1,3 +1,4 @@
+import { mobileLabels } from '../../lib/mobileLabels';
 /**
  * Gateway Mobile — Organizer Onboarding & Verification Dossier
  * Mirrors gateway-fe/src/app/organizer/onboarding/page.tsx
@@ -17,7 +18,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { organizerApi } from '../../lib/api';
 import { OrganizerProfile, OrganizerDocument } from '../../types/api';
-import { Colors } from '../../lib/theme';
+import { usePreferences, useColors } from '../../context/Preferences';
 import {
   pickImageDocument,
   appendDocumentToFormData,
@@ -25,6 +26,9 @@ import {
 } from '../../lib/filePicker';
 
 export default function OrganizerOnboardingScreen() {
+  const { language: uiLanguage } = usePreferences();
+  const ui = (label: string) => uiLanguage === 'id' ? mobileLabels[label] ?? label : label;
+  const Colors = useColors();
   const router = useRouter();
   const { user, loading: authLoading, refreshUser } = useAuth();
 
@@ -68,6 +72,7 @@ export default function OrganizerOnboardingScreen() {
       return;
     }
     if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Set loading before fetching the authenticated organizer profile.
       fetchProfile();
     }
   }, [user, authLoading, router, fetchProfile]);
@@ -78,7 +83,7 @@ export default function OrganizerOnboardingScreen() {
     try {
       const doc = await pickImageDocument();
       if (doc) {
-        if (doc.size > 5 * 1024 * 1024) {
+        if ((doc.size ?? 0) > 5 * 1024 * 1024) {
           Alert.alert('File Too Large', 'Maximum file size allowed is 5 MB.');
           return;
         }
@@ -162,9 +167,7 @@ export default function OrganizerOnboardingScreen() {
         <Text
           style={{ color: Colors.inkSecondary }}
           className="font-mono text-xs uppercase tracking-widest mt-4 text-center"
-        >
-          LOADING PROMOTER DOSSIER...
-        </Text>
+        >{ui("LOADING PROMOTER DOSSIER...")}</Text>
       </SafeAreaView>
     );
   }
@@ -193,16 +196,12 @@ export default function OrganizerOnboardingScreen() {
             <Text
               style={{ color: Colors.inkSecondary }}
               className="font-mono text-xs uppercase tracking-wider"
-            >
-              ← Back
-            </Text>
+            >{ui("← Back")}</Text>
           </TouchableOpacity>
           <Text
             style={{ color: Colors.gold }}
             className="font-mono text-xs uppercase tracking-widest font-bold"
-          >
-            GATEWAY PROMOTER
-          </Text>
+          >{ui("GATEWAY PROMOTER")}</Text>
         </View>
 
         <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
@@ -223,9 +222,7 @@ export default function OrganizerOnboardingScreen() {
                 <Text
                   style={{ color: Colors.inkSecondary }}
                   className="font-mono text-[10px] uppercase tracking-widest mb-1"
-                >
-                  ORGANIZER VERIFICATION DOSSIER
-                </Text>
+                >{ui("ORGANIZER VERIFICATION DOSSIER")}</Text>
                 <Text
                   style={{ color: Colors.inkPrimary }}
                   className="font-bold text-2xl tracking-tight"
@@ -264,16 +261,11 @@ export default function OrganizerOnboardingScreen() {
                 <Text
                   style={{ color: Colors.inkPrimary }}
                   className="font-bold text-base mb-1"
-                >
-                  Promoter Account Verified & Fully Activated
-                </Text>
+                >{ui("Promoter Account Verified & Fully Activated")}</Text>
                 <Text
                   style={{ color: Colors.inkSecondary }}
                   className="text-xs leading-relaxed mb-4"
-                >
-                  Your organization is authorized to publish events, manage live
-                  ticketing tiers, and onboard gate scan staff.
-                </Text>
+                >{ui("Your organization is authorized to publish events, manage live ticketing tiers, and onboard gate scan staff.")}</Text>
                 <TouchableOpacity
                   onPress={() => router.push('/organizer/events' as any)}
                   style={{ backgroundColor: Colors.gold }}
@@ -283,9 +275,7 @@ export default function OrganizerOnboardingScreen() {
                   <Text
                     style={{ color: Colors.canvas }}
                     className="font-mono text-xs font-bold uppercase tracking-widest"
-                  >
-                    Enter Organizer Studio →
-                  </Text>
+                  >{ui("Enter Organizer Studio →")}</Text>
                 </TouchableOpacity>
               </View>
             ) : (
@@ -300,18 +290,11 @@ export default function OrganizerOnboardingScreen() {
                 <Text
                   style={{ color: Colors.inkPrimary }}
                   className="font-bold text-base mb-1"
-                >
-                  Dossier Under Compliance Review
-                </Text>
+                >{ui("Dossier Under Compliance Review")}</Text>
                 <Text
                   style={{ color: Colors.inkSecondary }}
                   className="text-xs leading-relaxed"
-                >
-                  Our compliance desk is currently reviewing your uploaded
-                  statutory documents. Reviews typically complete within 24–48
-                  hours. Once approved, you will unlock full access to the
-                  Organizer Studio.
-                </Text>
+                >{ui("Our compliance desk is currently reviewing your uploaded statutory documents. Reviews typically complete within 24–48 hours. Once approved, you will unlock full access to the Organizer Studio.")}</Text>
               </View>
             )}
 
@@ -324,9 +307,7 @@ export default function OrganizerOnboardingScreen() {
                 <Text
                   style={{ color: Colors.inkSecondary }}
                   className="font-mono text-[10px] uppercase tracking-wider mb-0.5"
-                >
-                  CONTACT PHONE
-                </Text>
+                >{ui("CONTACT PHONE")}</Text>
                 <Text
                   style={{ color: Colors.inkPrimary }}
                   className="font-mono text-xs font-semibold"
@@ -342,9 +323,7 @@ export default function OrganizerOnboardingScreen() {
                 <Text
                   style={{ color: Colors.inkSecondary }}
                   className="font-mono text-[10px] uppercase tracking-wider mb-0.5"
-                >
-                  REGISTERED ADDRESS
-                </Text>
+                >{ui("REGISTERED ADDRESS")}</Text>
                 <Text
                   style={{ color: Colors.inkPrimary }}
                   className="font-mono text-xs font-semibold"
@@ -360,9 +339,7 @@ export default function OrganizerOnboardingScreen() {
                 <Text
                   style={{ color: Colors.inkSecondary }}
                   className="font-mono text-[10px] uppercase tracking-wider mb-0.5"
-                >
-                  BANKING SETTLEMENT DESTINATION
-                </Text>
+                >{ui("BANKING SETTLEMENT DESTINATION")}</Text>
                 <Text
                   style={{ color: Colors.inkPrimary }}
                   className="font-mono text-xs font-semibold"
@@ -376,9 +353,7 @@ export default function OrganizerOnboardingScreen() {
                 <Text
                   style={{ color: Colors.inkSecondary }}
                   className="font-mono text-[10px] uppercase tracking-wider mb-0.5"
-                >
-                  IDENTITY REGISTRY NO.
-                </Text>
+                >{ui("IDENTITY REGISTRY NO.")}</Text>
                 <Text
                   style={{ color: Colors.inkPrimary }}
                   className="font-mono text-xs font-semibold"
@@ -401,9 +376,7 @@ export default function OrganizerOnboardingScreen() {
                 <Text
                   style={{ color: Colors.inkSecondary }}
                   className="font-mono text-xs uppercase tracking-widest mb-3"
-                >
-                  COMPLIANCE DOCUMENTATION REGISTRY
-                </Text>
+                >{ui("COMPLIANCE DOCUMENTATION REGISTRY")}</Text>
                 <View
                   style={{
                     backgroundColor: Colors.canvas,
@@ -433,8 +406,7 @@ export default function OrganizerOnboardingScreen() {
                           <Text
                             style={{ color: Colors.terracotta }}
                             className="font-mono text-[10px] mt-1"
-                          >
-                            Remark: {doc.rejectionReason}
+                          >{ui("Remark:")}{" "}{doc.rejectionReason}
                           </Text>
                         )}
                       </View>
@@ -495,16 +467,12 @@ export default function OrganizerOnboardingScreen() {
           <Text
             style={{ color: Colors.inkSecondary }}
             className="font-mono text-xs uppercase tracking-wider"
-          >
-            ← Back
-          </Text>
+          >{ui("← Back")}</Text>
         </TouchableOpacity>
         <Text
           style={{ color: Colors.gold }}
           className="font-mono text-xs uppercase tracking-widest font-bold"
-        >
-          ACCREDITATION
-        </Text>
+        >{ui("ACCREDITATION")}</Text>
       </View>
 
       <ScrollView
@@ -519,22 +487,15 @@ export default function OrganizerOnboardingScreen() {
           <Text
             style={{ color: Colors.inkSecondary }}
             className="font-mono text-xs uppercase tracking-widest mb-1"
-          >
-            PROMOTER ACCREDITATION // ONBOARDING
-          </Text>
+          >{ui("PROMOTER ACCREDITATION // ONBOARDING")}</Text>
           <Text
             style={{ color: Colors.inkPrimary }}
             className="text-2xl font-bold tracking-tight mb-2"
-          >
-            Register as Event Organizer
-          </Text>
+          >{ui("Register as Event Organizer")}</Text>
           <Text
             style={{ color: Colors.inkSecondary }}
             className="text-xs font-mono leading-relaxed"
-          >
-            Submit your entity legal profile, bank account for ticket revenue
-            settlements, and 4 statutory documents for compliance verification.
-          </Text>
+          >{ui("Submit your entity legal profile, bank account for ticket revenue settlements, and 4 statutory documents for compliance verification.")}</Text>
         </View>
 
         {/* Alerts */}
@@ -586,10 +547,7 @@ export default function OrganizerOnboardingScreen() {
             <Text
               style={{ color: Colors.danger }}
               className="font-mono text-xs"
-            >
-              Your application was rejected: {profile?.rejectionReason}. Update
-              your details and upload all four documents to reapply.
-            </Text>
+            >{ui("Your application was rejected:")}{" "}{profile?.rejectionReason}{ui(". Update your details and upload all four documents to reapply.")}{" "}</Text>
           </View>
         )}
 
@@ -605,21 +563,17 @@ export default function OrganizerOnboardingScreen() {
           <Text
             style={{ color: Colors.gold }}
             className="font-mono text-xs font-bold uppercase tracking-widest mb-4"
-          >
-            1. Organization & Contact Information
-          </Text>
+          >{ui("1. Organization & Contact Information")}</Text>
 
           <View className="mb-3">
             <Text
               style={{ color: Colors.inkSecondary }}
               className="font-mono text-[10px] uppercase tracking-wider mb-1"
-            >
-              Organization / Promoter Name *
-            </Text>
+            >{ui("Organization / Promoter Name *")}</Text>
             <TextInput
               value={organizationName}
               onChangeText={setOrganizationName}
-              placeholder="e.g. Archipelago Live Entertainment"
+              placeholder={ui("e.g. Archipelago Live Entertainment")}
               placeholderTextColor={Colors.edge}
               style={{
                 backgroundColor: Colors.canvas,
@@ -635,9 +589,7 @@ export default function OrganizerOnboardingScreen() {
             <Text
               style={{ color: Colors.inkSecondary }}
               className="font-mono text-[10px] uppercase tracking-wider mb-1"
-            >
-              Official Phone Number *
-            </Text>
+            >{ui("Official Phone Number *")}</Text>
             <TextInput
               value={phoneNumber}
               onChangeText={setPhoneNumber}
@@ -658,13 +610,11 @@ export default function OrganizerOnboardingScreen() {
             <Text
               style={{ color: Colors.inkSecondary }}
               className="font-mono text-[10px] uppercase tracking-wider mb-1"
-            >
-              Registered Physical Address *
-            </Text>
+            >{ui("Registered Physical Address *")}</Text>
             <TextInput
               value={address}
               onChangeText={setAddress}
-              placeholder="Full registered headquarters or operations office address"
+              placeholder={ui("Full registered headquarters or operations office address")}
               placeholderTextColor={Colors.edge}
               multiline
               numberOfLines={2}
@@ -682,13 +632,11 @@ export default function OrganizerOnboardingScreen() {
             <Text
               style={{ color: Colors.inkSecondary }}
               className="font-mono text-[10px] uppercase tracking-wider mb-1"
-            >
-              Identity Card / Tax Registration No.
-            </Text>
+            >{ui("Identity Card / Tax Registration No.")}</Text>
             <TextInput
               value={identityCardNumber}
               onChangeText={setIdentityCardNumber}
-              placeholder="NIK / NPWP (optional)"
+              placeholder={ui("NIK / NPWP (optional)")}
               placeholderTextColor={Colors.edge}
               style={{
                 backgroundColor: Colors.canvas,
@@ -713,21 +661,17 @@ export default function OrganizerOnboardingScreen() {
           <Text
             style={{ color: Colors.gold }}
             className="font-mono text-xs font-bold uppercase tracking-widest mb-4"
-          >
-            2. Settlement Banking Details
-          </Text>
+          >{ui("2. Settlement Banking Details")}</Text>
 
           <View className="mb-3">
             <Text
               style={{ color: Colors.inkSecondary }}
               className="font-mono text-[10px] uppercase tracking-wider mb-1"
-            >
-              Bank Name *
-            </Text>
+            >{ui("Bank Name *")}</Text>
             <TextInput
               value={bankName}
               onChangeText={setBankName}
-              placeholder="e.g. BCA / Bank Mandiri"
+              placeholder={ui("e.g. BCA / Bank Mandiri")}
               placeholderTextColor={Colors.edge}
               style={{
                 backgroundColor: Colors.canvas,
@@ -743,13 +687,11 @@ export default function OrganizerOnboardingScreen() {
             <Text
               style={{ color: Colors.inkSecondary }}
               className="font-mono text-[10px] uppercase tracking-wider mb-1"
-            >
-              Bank Account Number *
-            </Text>
+            >{ui("Bank Account Number *")}</Text>
             <TextInput
               value={bankAccountNumber}
               onChangeText={setBankAccountNumber}
-              placeholder="e.g. 1234567890"
+              placeholder={ui("e.g. 1234567890")}
               placeholderTextColor={Colors.edge}
               keyboardType="number-pad"
               style={{
@@ -766,13 +708,11 @@ export default function OrganizerOnboardingScreen() {
             <Text
               style={{ color: Colors.inkSecondary }}
               className="font-mono text-[10px] uppercase tracking-wider mb-1"
-            >
-              Bank Account Holder Name *
-            </Text>
+            >{ui("Bank Account Holder Name *")}</Text>
             <TextInput
               value={bankAccountName}
               onChangeText={setBankAccountName}
-              placeholder="Must match organization identity"
+              placeholder={ui("Must match organization identity")}
               placeholderTextColor={Colors.edge}
               style={{
                 backgroundColor: Colors.canvas,
@@ -797,15 +737,11 @@ export default function OrganizerOnboardingScreen() {
           <Text
             style={{ color: Colors.gold }}
             className="font-mono text-xs font-bold uppercase tracking-widest mb-1"
-          >
-            3. Statutory Documents (All 4 Required)
-          </Text>
+          >{ui("3. Statutory Documents (All 4 Required)")}</Text>
           <Text
             style={{ color: Colors.inkSecondary }}
             className="font-mono text-[10px] mb-4"
-          >
-            Supported formats: JPEG, PNG, WEBP (Max 5MB each).
-          </Text>
+          >{ui("Supported formats: JPEG, PNG, WEBP (Max 5MB each).")}</Text>
 
           {/* Doc 1: Business License */}
           <View
@@ -819,15 +755,11 @@ export default function OrganizerOnboardingScreen() {
             <Text
               style={{ color: Colors.inkPrimary }}
               className="font-mono font-bold text-xs uppercase mb-0.5"
-            >
-              1. Business License (NIB / SIUP) *
-            </Text>
+            >{ui("1. Business License (NIB / SIUP) *")}</Text>
             <Text
               style={{ color: Colors.inkSecondary }}
               className="text-[11px] mb-2"
-            >
-              Official operating permit issued by relevant regulatory authorities.
-            </Text>
+            >{ui("Official operating permit issued by relevant regulatory authorities.")}</Text>
             <TouchableOpacity
               onPress={() => handlePickDocument(setBusinessLicense)}
               style={{
@@ -852,17 +784,14 @@ export default function OrganizerOnboardingScreen() {
                 <Text
                   style={{ color: Colors.gold }}
                   className="font-mono text-[10px]"
-                >
-                  ✓ Attached
-                </Text>
+                >{ui("✓ Attached")}</Text>
               )}
             </TouchableOpacity>
             {Boolean(businessLicense) && (
               <Text
                 style={{ color: Colors.inkSecondary }}
                 className="font-mono text-[10px] mt-1.5"
-              >
-                File: {businessLicense?.name} (
+              >{ui("File:")}{" "}{businessLicense?.name} (
                 {(Number(businessLicense?.size || 0) / 1024 / 1024).toFixed(2)} MB)
               </Text>
             )}
@@ -880,15 +809,11 @@ export default function OrganizerOnboardingScreen() {
             <Text
               style={{ color: Colors.inkPrimary }}
               className="font-mono font-bold text-xs uppercase mb-0.5"
-            >
-              2. Guarantee Letter (Surat Pernyataan) *
-            </Text>
+            >{ui("2. Guarantee Letter (Surat Pernyataan) *")}</Text>
             <Text
               style={{ color: Colors.inkSecondary }}
               className="text-[11px] mb-2"
-            >
-              Signed declaration affirming financial & event execution integrity.
-            </Text>
+            >{ui("Signed declaration affirming financial & event execution integrity.")}</Text>
             <TouchableOpacity
               onPress={() => handlePickDocument(setGuaranteeLetter)}
               style={{
@@ -913,17 +838,14 @@ export default function OrganizerOnboardingScreen() {
                 <Text
                   style={{ color: Colors.gold }}
                   className="font-mono text-[10px]"
-                >
-                  ✓ Attached
-                </Text>
+                >{ui("✓ Attached")}</Text>
               )}
             </TouchableOpacity>
             {Boolean(guaranteeLetter) && (
               <Text
                 style={{ color: Colors.inkSecondary }}
                 className="font-mono text-[10px] mt-1.5"
-              >
-                File: {guaranteeLetter?.name} (
+              >{ui("File:")}{" "}{guaranteeLetter?.name} (
                 {(Number(guaranteeLetter?.size || 0) / 1024 / 1024).toFixed(2)} MB)
               </Text>
             )}
@@ -941,15 +863,11 @@ export default function OrganizerOnboardingScreen() {
             <Text
               style={{ color: Colors.inkPrimary }}
               className="font-mono font-bold text-xs uppercase mb-0.5"
-            >
-              3. Entity Registration (Akta / Kemenkumham) *
-            </Text>
+            >{ui("3. Entity Registration (Akta / Kemenkumham) *")}</Text>
             <Text
               style={{ color: Colors.inkSecondary }}
               className="text-[11px] mb-2"
-            >
-              Corporate deeds of establishment or organization registration certificate.
-            </Text>
+            >{ui("Corporate deeds of establishment or organization registration certificate.")}</Text>
             <TouchableOpacity
               onPress={() => handlePickDocument(setOrganizationRegistration)}
               style={{
@@ -976,17 +894,14 @@ export default function OrganizerOnboardingScreen() {
                 <Text
                   style={{ color: Colors.gold }}
                   className="font-mono text-[10px]"
-                >
-                  ✓ Attached
-                </Text>
+                >{ui("✓ Attached")}</Text>
               )}
             </TouchableOpacity>
             {Boolean(organizationRegistration) && (
               <Text
                 style={{ color: Colors.inkSecondary }}
                 className="font-mono text-[10px] mt-1.5"
-              >
-                File: {organizationRegistration?.name} (
+              >{ui("File:")}{" "}{organizationRegistration?.name} (
                 {(
                   Number(organizationRegistration?.size || 0) /
                   1024 /
@@ -1009,15 +924,11 @@ export default function OrganizerOnboardingScreen() {
             <Text
               style={{ color: Colors.inkPrimary }}
               className="font-mono font-bold text-xs uppercase mb-0.5"
-            >
-              4. Person-in-Charge Identity Card (KTP) *
-            </Text>
+            >{ui("4. Person-in-Charge Identity Card (KTP) *")}</Text>
             <Text
               style={{ color: Colors.inkSecondary }}
               className="text-[11px] mb-2"
-            >
-              Clear photo ID of authorized director or chief executive officer.
-            </Text>
+            >{ui("Clear photo ID of authorized director or chief executive officer.")}</Text>
             <TouchableOpacity
               onPress={() => handlePickDocument(setIdentityCard)}
               style={{
@@ -1042,17 +953,14 @@ export default function OrganizerOnboardingScreen() {
                 <Text
                   style={{ color: Colors.gold }}
                   className="font-mono text-[10px]"
-                >
-                  ✓ Attached
-                </Text>
+                >{ui("✓ Attached")}</Text>
               )}
             </TouchableOpacity>
             {Boolean(identityCard) && (
               <Text
                 style={{ color: Colors.inkSecondary }}
                 className="font-mono text-[10px] mt-1.5"
-              >
-                File: {identityCard?.name} (
+              >{ui("File:")}{" "}{identityCard?.name} (
                 {(Number(identityCard?.size || 0) / 1024 / 1024).toFixed(2)} MB)
               </Text>
             )}
@@ -1073,9 +981,7 @@ export default function OrganizerOnboardingScreen() {
             <Text
               style={{ color: Colors.inkPrimary }}
               className="font-mono text-xs uppercase tracking-wider"
-            >
-              Cancel
-            </Text>
+            >{ui("Cancel")}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -1095,7 +1001,7 @@ export default function OrganizerOnboardingScreen() {
               style={{ color: Colors.canvas }}
               className="font-mono text-xs uppercase tracking-widest font-black"
             >
-              {submitting ? 'Uploading Dossier...' : 'Submit Dossier for Review'}
+              {submitting ? ui('Uploading Dossier...') : ui('Submit Dossier for Review')}
             </Text>
           </TouchableOpacity>
         </View>

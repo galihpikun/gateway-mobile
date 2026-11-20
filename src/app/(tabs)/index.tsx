@@ -1,3 +1,4 @@
+import { mobileLabels } from '../../lib/mobileLabels';
 /**
  * Gateway Mobile — Home Screen
  * Based on gateway-fe/src/app/page.tsx
@@ -11,21 +12,22 @@ import {
   TextInput,
   TouchableOpacity,
   RefreshControl,
-  FlatList,
   ActivityIndicator,
-  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { eventApi, categoryApi } from '../../lib/api';
 import { Event, Category } from '../../types/api';
 import { useAuth } from '../../context/AuthContext';
-import { Colors } from '../../lib/theme';
+import { usePreferences, useColors } from '../../context/Preferences';
 import { EventCard } from '../../components/EventCard';
 import { FeaturedEvent } from '../../components/FeaturedEvent';
 import { GatewayLogo } from '../../components/GatewayLogo';
 
 export default function HomeScreen() {
+  const { language: uiLanguage } = usePreferences();
+  const ui = (label: string) => uiLanguage === 'id' ? mobileLabels[label] ?? label : label;
+  const Colors = useColors();
   const { user } = useAuth();
   const router = useRouter();
 
@@ -57,6 +59,7 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Start the initial request and reset its error state.
     fetchData();
   }, [fetchData]);
 
@@ -86,9 +89,9 @@ export default function HomeScreen() {
       event.ticketTypes
         ?.filter((t) => t.availableQuota > 0)
         .map((t) => Number(t.price)) || [];
-    if (!prices.length) return 'Sold out';
+    if (!prices.length) return ui('Sold out');
     const min = Math.min(...prices);
-    if (min === 0) return 'Free';
+    if (min === 0) return ui('Free');
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
@@ -106,9 +109,7 @@ export default function HomeScreen() {
         <Text
           style={{ color: Colors.inkSecondary }}
           className="text-ink-secondary text-xs font-mono mt-3 uppercase tracking-widest"
-        >
-          Loading concerts...
-        </Text>
+        >{ui("Loading concerts...")}</Text>
       </View>
     );
   }
@@ -139,9 +140,7 @@ export default function HomeScreen() {
             </Text>
           </View>
           <View className="items-end">
-            <Text className="text-ink-secondary text-xs font-mono uppercase tracking-wider">
-              Hello,
-            </Text>
+            <Text className="text-ink-secondary text-xs font-mono uppercase tracking-wider">{ui("Hello,")}</Text>
             <Text
               className="text-ink-primary text-xs font-bold font-mono"
               numberOfLines={1}
@@ -153,21 +152,15 @@ export default function HomeScreen() {
 
         {/* Strip */}
         <View className="border-b border-line py-3 px-4 flex-row gap-5">
-          <Text className="text-gold text-xs font-mono uppercase tracking-widest">
-            GATEWAY / THE LIVE EXPERIENCE
-          </Text>
+          <Text className="text-gold text-xs font-mono uppercase tracking-widest">{ui("GATEWAY / THE LIVE EXPERIENCE")}</Text>
         </View>
 
         {/* Featured Event */}
         {featured && (
           <View className="px-4 pt-5 pb-2">
             <View className="flex-row items-center justify-between mb-3">
-              <Text className="text-ink-secondary text-xs font-mono uppercase tracking-widest">
-                IN THE SPOTLIGHT
-              </Text>
-              <Text className="text-ink-secondary text-xs">
-                Worth being there for
-              </Text>
+              <Text className="text-ink-secondary text-xs font-mono uppercase tracking-widest">{ui("IN THE SPOTLIGHT")}</Text>
+              <Text className="text-ink-secondary text-xs">{ui("Worth being there for")}</Text>
             </View>
             <FeaturedEvent event={featured} price={formatPrice(featured)} />
           </View>
@@ -175,12 +168,8 @@ export default function HomeScreen() {
 
         {/* Catalog */}
         <View className="px-4 pt-6 pb-2">
-          <Text className="text-ink-secondary text-xs font-mono uppercase tracking-widest mb-1">
-            FIND YOUR FREQUENCY
-          </Text>
-          <Text className="text-ink-primary font-bold text-2xl tracking-tight mb-4">
-            Find your moment.
-          </Text>
+          <Text className="text-ink-secondary text-xs font-mono uppercase tracking-widest mb-1">{ui("FIND YOUR FREQUENCY")}</Text>
+          <Text className="text-ink-primary font-bold text-2xl tracking-tight mb-4">{ui("Find your moment.")}</Text>
 
           {/* Search bar */}
           <View className="flex-row items-center gap-2 bg-surface border border-line px-3 py-2 rounded-sm mb-4">
@@ -191,7 +180,7 @@ export default function HomeScreen() {
                 setSearch(t);
                 setPage(1);
               }}
-              placeholder="Artist, concert or city"
+              placeholder={ui("Artist, concert or city")}
               placeholderTextColor={Colors.inkSecondary + '80'}
               className="flex-1 text-ink-primary text-xs font-mono"
             />
@@ -229,9 +218,7 @@ export default function HomeScreen() {
                   className={`text-xs font-mono ${
                     !selectedCategory ? 'text-ink-primary' : 'text-ink-secondary'
                   }`}
-                >
-                  All concerts
-                </Text>
+                >{ui("All concerts")}</Text>
               </TouchableOpacity>
               {categories.map((cat) => (
                 <TouchableOpacity
@@ -262,18 +249,13 @@ export default function HomeScreen() {
 
           {/* Count */}
           <Text className="text-ink-secondary text-xs font-mono mb-4">
-            {filtered.length} concerts to discover
-          </Text>
+            {filtered.length}{ui("concerts to discover")}{" "}</Text>
 
           {/* Error state */}
           {error && (
             <View className="border border-line p-8 items-center rounded-sm mb-6">
-              <Text className="text-ink-primary font-bold text-lg mb-2">
-                Concerts could not be loaded
-              </Text>
-              <Text className="text-ink-secondary text-xs text-center mb-4">
-                Please check your connection and try again.
-              </Text>
+              <Text className="text-ink-primary font-bold text-lg mb-2">{ui("Concerts could not be loaded")}</Text>
+              <Text className="text-ink-secondary text-xs text-center mb-4">{ui("Please check your connection and try again.")}</Text>
               <TouchableOpacity
                 onPress={() => {
                   setLoading(true);
@@ -281,9 +263,7 @@ export default function HomeScreen() {
                 }}
                 className="border border-edge px-4 py-2 rounded-sm"
               >
-                <Text className="text-ink-primary text-xs font-mono">
-                  Try again
-                </Text>
+                <Text className="text-ink-primary text-xs font-mono">{ui("Try again")}</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -293,12 +273,8 @@ export default function HomeScreen() {
             <>
               {visible.length === 0 ? (
                 <View className="border border-line p-8 items-center rounded-sm mb-6">
-                  <Text className="text-ink-primary font-bold text-lg mb-2">
-                    No concerts found
-                  </Text>
-                  <Text className="text-ink-secondary text-xs text-center mb-4">
-                    Try another search or check back for new shows.
-                  </Text>
+                  <Text className="text-ink-primary font-bold text-lg mb-2">{ui("No concerts found")}</Text>
+                  <Text className="text-ink-secondary text-xs text-center mb-4">{ui("Try another search or check back for new shows.")}</Text>
                   {Boolean(search || selectedCategory) && (
                     <TouchableOpacity
                       onPress={() => {
@@ -308,9 +284,7 @@ export default function HomeScreen() {
                       }}
                       className="border border-edge px-4 py-2 rounded-sm"
                     >
-                      <Text className="text-ink-primary text-xs font-mono">
-                        Clear filters
-                      </Text>
+                      <Text className="text-ink-primary text-xs font-mono">{ui("Clear filters")}</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -339,9 +313,7 @@ export default function HomeScreen() {
                       page === 1 ? 'opacity-40' : ''
                     }`}
                   >
-                    <Text className="text-ink-primary text-xs font-mono">
-                      Previous
-                    </Text>
+                    <Text className="text-ink-primary text-xs font-mono">{ui("Previous")}</Text>
                   </TouchableOpacity>
                   <Text className="text-ink-secondary text-xs font-mono">
                     {page} / {totalPages}
@@ -353,9 +325,7 @@ export default function HomeScreen() {
                       page === totalPages ? 'opacity-40' : ''
                     }`}
                   >
-                    <Text className="text-ink-primary text-xs font-mono">
-                      Next
-                    </Text>
+                    <Text className="text-ink-primary text-xs font-mono">{ui("Next")}</Text>
                   </TouchableOpacity>
                 </View>
               )}

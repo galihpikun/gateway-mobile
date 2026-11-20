@@ -1,3 +1,4 @@
+import { mobileLabels } from '../lib/mobileLabels';
 /**
  * Gateway Mobile — Featured Event Component
  * Based on .featured-event in globals.css
@@ -7,7 +8,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Event } from '../types/api';
-import { Colors } from '../lib/theme';
+import { usePreferences, useColors } from '../context/Preferences';
 
 interface FeaturedEventProps {
   event: Event;
@@ -15,6 +16,9 @@ interface FeaturedEventProps {
 }
 
 export function FeaturedEvent({ event, price }: FeaturedEventProps) {
+  const { language: uiLanguage } = usePreferences();
+  const ui = (label: string) => uiLanguage === 'id' ? mobileLabels[label] ?? label : label;
+  const Colors = useColors();
   const router = useRouter();
 
   const formatDate = (dateStr: string) =>
@@ -63,9 +67,7 @@ export function FeaturedEvent({ event, price }: FeaturedEventProps) {
               fontFamily: 'monospace',
               letterSpacing: 2,
             }}
-          >
-            UP NEXT
-          </Text>
+          >{ui("UP NEXT")}</Text>
         </View>
         {/* LIVE label */}
         <View
@@ -82,9 +84,7 @@ export function FeaturedEvent({ event, price }: FeaturedEventProps) {
               fontWeight: '700',
               letterSpacing: 1,
             }}
-          >
-            LIVE
-          </Text>
+          >{ui("LIVE")}</Text>
         </View>
         <View
           style={{
@@ -162,9 +162,7 @@ export function FeaturedEvent({ event, price }: FeaturedEventProps) {
                 letterSpacing: 1.8,
                 marginBottom: 2,
               }}
-            >
-              From
-            </Text>
+            >{ui("From")}</Text>
             <Text
               style={{
                 fontSize: 18,

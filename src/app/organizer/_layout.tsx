@@ -10,9 +10,10 @@
  */
 import React from 'react';
 import { Stack } from 'expo-router';
-import { Colors } from '../../lib/theme';
+import { useColors } from '../../context/Preferences';
 
 export default function OrganizerLayout() {
+  const Colors = useColors();
   return (
     <Stack
       screenOptions={{

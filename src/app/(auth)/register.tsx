@@ -1,3 +1,4 @@
+import { mobileLabels } from '../../lib/mobileLabels';
 /**
  * Gateway Mobile — Register Screen
  * Based on gateway-fe/src/app/register/page.tsx
@@ -16,9 +17,12 @@ import {
 import { Link, useRouter } from 'expo-router';
 import { authApi, ApiError } from '../../lib/api';
 import { GatewayLogo } from '../../components/GatewayLogo';
-import { Colors } from '../../lib/theme';
+import { usePreferences, useColors } from '../../context/Preferences';
 
 export default function RegisterScreen() {
+  const { language: uiLanguage } = usePreferences();
+  const ui = (label: string) => uiLanguage === 'id' ? mobileLabels[label] ?? label : label;
+  const Colors = useColors();
   const router = useRouter();
 
   const [fullName, setFullName] = useState('');
@@ -91,9 +95,7 @@ export default function RegisterScreen() {
             <Text
               style={{ color: Colors.inkSecondary }}
               className="text-ink-secondary text-xs tracking-widest uppercase font-mono mt-1"
-            >
-              The Live Experience
-            </Text>
+            >{ui("The Live Experience")}</Text>
           </View>
 
           {/* Auth Panel */}
@@ -112,9 +114,7 @@ export default function RegisterScreen() {
               <Text
                 style={{ color: Colors.inkPrimary }}
                 className="text-ink-primary font-bold text-2xl tracking-tight"
-              >
-                Register with Gateway
-              </Text>
+              >{ui("Register with Gateway")}</Text>
             </View>
 
             {/* Error */}
@@ -141,13 +141,11 @@ export default function RegisterScreen() {
               <Text
                 style={{ color: Colors.inkPrimary }}
                 className="text-ink-primary font-mono text-xs uppercase tracking-widest font-bold mb-2"
-              >
-                Legal Full Name
-              </Text>
+              >{ui("Legal Full Name")}</Text>
               <TextInput
                 value={fullName}
                 onChangeText={setFullName}
-                placeholder="e.g. Galih Pratama"
+                placeholder={ui("e.g. Galih Pratama")}
                 placeholderTextColor={Colors.inkSecondary + '99'}
                 autoCapitalize="words"
                 autoComplete="name"
@@ -166,9 +164,7 @@ export default function RegisterScreen() {
               <Text
                 style={{ color: Colors.inkPrimary }}
                 className="text-ink-primary font-mono text-xs uppercase tracking-widest font-bold mb-2"
-              >
-                Email Address
-              </Text>
+              >{ui("Email Address")}</Text>
               <TextInput
                 value={email}
                 onChangeText={setEmail}
@@ -193,14 +189,12 @@ export default function RegisterScreen() {
               <Text
                 style={{ color: Colors.inkPrimary }}
                 className="text-ink-primary font-mono text-xs uppercase tracking-widest font-bold mb-2"
-              >
-                Create Password
-              </Text>
+              >{ui("Create Password")}</Text>
               <View className="relative">
                 <TextInput
                   value={password}
                   onChangeText={setPassword}
-                  placeholder="Minimum 6 characters"
+                  placeholder={ui("Minimum 6 characters")}
                   placeholderTextColor={Colors.inkSecondary + '99'}
                   secureTextEntry={!showPassword}
                   autoComplete="new-password"
@@ -220,7 +214,7 @@ export default function RegisterScreen() {
                     style={{ color: Colors.inkSecondary }}
                     className="text-ink-secondary text-xs font-mono"
                   >
-                    {showPassword ? 'HIDE' : 'SHOW'}
+                    {showPassword ? ui('HIDE') : ui('SHOW')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -231,14 +225,12 @@ export default function RegisterScreen() {
               <Text
                 style={{ color: Colors.inkPrimary }}
                 className="text-ink-primary font-mono text-xs uppercase tracking-widest font-bold mb-2"
-              >
-                Confirm Password
-              </Text>
+              >{ui("Confirm Password")}</Text>
               <View className="relative">
                 <TextInput
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
-                  placeholder="Re-enter password"
+                  placeholder={ui("Re-enter password")}
                   placeholderTextColor={Colors.inkSecondary + '99'}
                   secureTextEntry={!showConfirm}
                   autoComplete="new-password"
@@ -258,7 +250,7 @@ export default function RegisterScreen() {
                     style={{ color: Colors.inkSecondary }}
                     className="text-ink-secondary text-xs font-mono"
                   >
-                    {showConfirm ? 'HIDE' : 'SHOW'}
+                    {showConfirm ? ui('HIDE') : ui('SHOW')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -279,7 +271,7 @@ export default function RegisterScreen() {
                 style={{ color: Colors.canvas }}
                 className="text-canvas font-bold text-sm uppercase tracking-widest"
               >
-                {loading ? 'CREATING ACCOUNT...' : 'CREATE ACCOUNT'}
+                {loading ? ui('CREATING ACCOUNT...') : ui('CREATE ACCOUNT')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -289,16 +281,12 @@ export default function RegisterScreen() {
             <Text
               style={{ color: Colors.inkSecondary }}
               className="text-ink-secondary text-xs font-mono"
-            >
-              Already have an account?
-            </Text>
+            >{ui("Already have an account?")}</Text>
             <Link
               href="/(auth)/login"
               style={{ color: Colors.inkPrimary }}
               className="text-ink-primary text-xs font-mono font-bold underline"
-            >
-              Sign In
-            </Link>
+            >{ui("Sign In")}{" "}</Link>
           </View>
         </View>
       </ScrollView>

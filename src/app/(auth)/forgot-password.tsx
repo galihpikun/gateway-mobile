@@ -1,3 +1,4 @@
+import { mobileLabels } from '../../lib/mobileLabels';
 /**
  * Gateway Mobile — Forgot Password Screen
  * Step 1: Enter email
@@ -18,11 +19,14 @@ import {
 import { useRouter } from 'expo-router';
 import { authApi, ApiError } from '../../lib/api';
 import { GatewayLogo } from '../../components/GatewayLogo';
-import { Colors } from '../../lib/theme';
+import { usePreferences, useColors } from '../../context/Preferences';
 
 type Step = 'email' | 'otp' | 'reset' | 'done';
 
 export default function ForgotPasswordScreen() {
+  const { language: uiLanguage } = usePreferences();
+  const ui = (label: string) => uiLanguage === 'id' ? mobileLabels[label] ?? label : label;
+  const Colors = useColors();
   const router = useRouter();
 
   const [step, setStep] = useState<Step>('email');
@@ -140,7 +144,7 @@ export default function ForgotPasswordScreen() {
                 style={{ color: Colors.inkPrimary }}
                 className="text-ink-primary font-bold text-2xl tracking-tight"
               >
-                {step === 'done' ? 'Password Reset' : 'Forgot Password'}
+                {step === 'done' ? ui('Password Reset') : ui('Forgot Password')}
               </Text>
               <Text
                 style={{ color: Colors.inkSecondary }}
@@ -194,9 +198,7 @@ export default function ForgotPasswordScreen() {
                   <Text
                     style={{ color: Colors.inkPrimary }}
                     className="text-ink-primary font-mono text-xs uppercase tracking-widest font-bold mb-2"
-                  >
-                    Email Address
-                  </Text>
+                  >{ui("Email Address")}</Text>
                   <TextInput
                     value={email}
                     onChangeText={setEmail}
@@ -227,9 +229,7 @@ export default function ForgotPasswordScreen() {
                     <Text
                       style={{ color: Colors.canvas }}
                       className="text-canvas font-bold text-sm uppercase tracking-widest"
-                    >
-                      SEND OTP CODE
-                    </Text>
+                    >{ui("SEND OTP CODE")}</Text>
                   )}
                 </TouchableOpacity>
               </>
@@ -241,9 +241,7 @@ export default function ForgotPasswordScreen() {
                   <Text
                     style={{ color: Colors.inkPrimary }}
                     className="text-ink-primary font-mono text-xs uppercase tracking-widest font-bold mb-2"
-                  >
-                    OTP Code
-                  </Text>
+                  >{ui("OTP Code")}</Text>
                   <TextInput
                     value={code}
                     onChangeText={setCode}
@@ -273,9 +271,7 @@ export default function ForgotPasswordScreen() {
                     <Text
                       style={{ color: Colors.canvas }}
                       className="text-canvas font-bold text-sm uppercase tracking-widest"
-                    >
-                      VERIFY CODE
-                    </Text>
+                    >{ui("VERIFY CODE")}</Text>
                   )}
                 </TouchableOpacity>
               </>
@@ -287,13 +283,11 @@ export default function ForgotPasswordScreen() {
                   <Text
                     style={{ color: Colors.inkPrimary }}
                     className="text-ink-primary font-mono text-xs uppercase tracking-widest font-bold mb-2"
-                  >
-                    New Password
-                  </Text>
+                  >{ui("New Password")}</Text>
                   <TextInput
                     value={newPassword}
                     onChangeText={setNewPassword}
-                    placeholder="Minimum 6 characters"
+                    placeholder={ui("Minimum 6 characters")}
                     placeholderTextColor={Colors.inkSecondary + '99'}
                     secureTextEntry
                     style={{
@@ -309,13 +303,11 @@ export default function ForgotPasswordScreen() {
                   <Text
                     style={{ color: Colors.inkPrimary }}
                     className="text-ink-primary font-mono text-xs uppercase tracking-widest font-bold mb-2"
-                  >
-                    Confirm Password
-                  </Text>
+                  >{ui("Confirm Password")}</Text>
                   <TextInput
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
-                    placeholder="Re-enter password"
+                    placeholder={ui("Re-enter password")}
                     placeholderTextColor={Colors.inkSecondary + '99'}
                     secureTextEntry
                     style={{
@@ -340,9 +332,7 @@ export default function ForgotPasswordScreen() {
                     <Text
                       style={{ color: Colors.canvas }}
                       className="text-canvas font-bold text-sm uppercase tracking-widest"
-                    >
-                      RESET PASSWORD
-                    </Text>
+                    >{ui("RESET PASSWORD")}</Text>
                   )}
                 </TouchableOpacity>
               </>
@@ -358,9 +348,7 @@ export default function ForgotPasswordScreen() {
                 <Text
                   style={{ color: Colors.canvas }}
                   className="text-canvas font-bold text-sm uppercase tracking-widest"
-                >
-                  SIGN IN NOW
-                </Text>
+                >{ui("SIGN IN NOW")}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -370,9 +358,7 @@ export default function ForgotPasswordScreen() {
               <Text
                 style={{ color: Colors.inkSecondary }}
                 className="text-ink-secondary text-xs font-mono underline"
-              >
-                ← Back to Sign In
-              </Text>
+              >{ui("← Back to Sign In")}</Text>
             </TouchableOpacity>
           </View>
         </View>

@@ -1,81 +1,25 @@
-/**
- * Gateway Mobile — Universal Document / Image Picker Helper
- * Works on Web (via native browser file input) and Native (with standard FormData file descriptor).
- */
-import { Platform } from 'react-native';
+import * as DocumentPicker from 'expo-document-picker';
 
-export interface PickedDocument {
-  name: string;
-  size: number;
-  type: string;
-  uri?: string;
-  file?: File;
+export type PickedDocument = DocumentPicker.DocumentPickerAsset;
+
+export async function pickDocument(type: string[], maxMB: number): Promise<PickedDocument | null> {
+  const response = await DocumentPicker.getDocumentAsync({ type, copyToCacheDirectory: true, multiple: false, base64: false });
+  if (response.canceled) return null;
+  const file = response.assets[0];
+  if ((file.size ?? 0) > maxMB * 1024 ** 2) {
+    throw new Error('Ukuran berkas melebihi ' + maxMB + ' MB.');
+  }
+  return file;
 }
 
-export function pickImageDocument(): Promise<PickedDocument | null> {
-  return new Promise((resolve) => {
-    if (Platform.OS === 'web') {
-      try {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/jpeg,image/png,image/webp';
-        input.style.display = 'none';
+export const pickImageDocument = () => pickDocument(['image/jpeg', 'image/png', 'image/webp'], 5);
+export const pickVideoDocument = () => pickDocument(['video/mp4', 'video/webm'], 25);
 
-        input.onchange = (e: Event) => {
-          const target = e.target as HTMLInputElement;
-          const file = target?.files?.[0];
-          if (file) {
-            resolve({
-              name: file.name,
-              size: file.size,
-              type: file.type || 'image/jpeg',
-              file: file,
-            });
-          } else {
-            resolve(null);
-          }
-          if (input.parentNode) {
-            document.body.removeChild(input);
-          }
-        };
-
-        input.oncancel = () => {
-          resolve(null);
-          if (input.parentNode) {
-            document.body.removeChild(input);
-          }
-        };
-
-        document.body.appendChild(input);
-        input.click();
-      } catch (err) {
-        console.warn('Web file picker error:', err);
-        resolve(null);
-      }
-    } else {
-      // Native fallback
-      resolve(null);
-    }
-  });
-}
-
-/**
- * Appends a PickedDocument to a FormData instance in a cross-platform way.
- */
-export function appendDocumentToFormData(
-  formData: FormData,
-  fieldName: string,
-  doc: PickedDocument,
-) {
-  if (doc.file) {
-    // Web: browser native File
-    formData.append(fieldName, doc.file);
-  } else if (doc.uri) {
-    // React Native mobile: file object with uri, name, and type
-    formData.append(fieldName, {
-      uri: doc.uri,
-      name: doc.name,
-      type: doc.type,
-    } as unknown as Blob);
+export function appendDocumentToFormData(formData: FormData, field: string, doc: PickedDocument) {
+  if (doc.file) formData.append(field, doc.file);
+  else {
+    const extension = doc.name.toLowerCase().split('.').pop();
+    const types: Record<string, string> = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', mp4: 'video/mp4', webm: 'video/webm' };
+    formData.append(field, { uri: doc.uri, name: doc.name, type: doc.mimeType || types[extension ?? ''] || 'application/octet-stream' } as unknown as Blob);
   }
 }

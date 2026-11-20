@@ -5,9 +5,10 @@
 import { Tabs, Redirect } from 'expo-router';
 import { Platform, View, Text } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
-import { Colors } from '../../lib/theme';
+import { useColors, usePreferences } from '../../context/Preferences';
 
 function TabIcon({ label, focused }: { label: string; focused: boolean }) {
+  const Colors = useColors();
   return (
     <Text
       style={{
@@ -25,6 +26,7 @@ function TabIcon({ label, focused }: { label: string; focused: boolean }) {
 }
 
 function HomeIcon({ focused }: { focused: boolean }) {
+  const Colors = useColors();
   return (
     <View style={{ width: 20, height: 20, alignItems: 'center', justifyContent: 'center' }}>
       <View
@@ -52,6 +54,7 @@ function HomeIcon({ focused }: { focused: boolean }) {
 }
 
 function SearchIcon({ focused }: { focused: boolean }) {
+  const Colors = useColors();
   return (
     <View style={{ width: 20, height: 20, alignItems: 'center', justifyContent: 'center' }}>
       <View
@@ -79,6 +82,7 @@ function SearchIcon({ focused }: { focused: boolean }) {
 }
 
 function TicketIcon({ focused }: { focused: boolean }) {
+  const Colors = useColors();
   return (
     <View style={{ width: 20, height: 20, alignItems: 'center', justifyContent: 'center' }}>
       <View
@@ -104,6 +108,7 @@ function TicketIcon({ focused }: { focused: boolean }) {
 }
 
 function ProfileIcon({ focused }: { focused: boolean }) {
+  const Colors = useColors();
   return (
     <View style={{ width: 20, height: 20, alignItems: 'center', justifyContent: 'center' }}>
       <View
@@ -132,6 +137,8 @@ function ProfileIcon({ focused }: { focused: boolean }) {
 }
 
 export default function TabsLayout() {
+  const { tr } = usePreferences();
+  const Colors = useColors();
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) return null;
@@ -163,28 +170,28 @@ export default function TabsLayout() {
         name="index"
         options={{
           tabBarIcon: ({ focused }) => <HomeIcon focused={focused} />,
-          tabBarLabel: ({ focused }) => <TabIcon label="Home" focused={focused} />,
+          tabBarLabel: ({ focused }) => <TabIcon label={tr('Beranda', 'Home')} focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="explore"
         options={{
           tabBarIcon: ({ focused }) => <SearchIcon focused={focused} />,
-          tabBarLabel: ({ focused }) => <TabIcon label="Explore" focused={focused} />,
+          tabBarLabel: ({ focused }) => <TabIcon label={tr('Jelajahi', 'Explore')} focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="my-tickets"
         options={{
           tabBarIcon: ({ focused }) => <TicketIcon focused={focused} />,
-          tabBarLabel: ({ focused }) => <TabIcon label="Tickets" focused={focused} />,
+          tabBarLabel: ({ focused }) => <TabIcon label={tr('Tiket', 'Tickets')} focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           tabBarIcon: ({ focused }) => <ProfileIcon focused={focused} />,
-          tabBarLabel: ({ focused }) => <TabIcon label="Profile" focused={focused} />,
+          tabBarLabel: ({ focused }) => <TabIcon label={tr('Profil', 'Profile')} focused={focused} />,
         }}
       />
     </Tabs>

@@ -1,7 +1,7 @@
 /**
  * Gateway Mobile — Design Tokens
  * Extracted from gateway-fe/src/app/globals.css
- * Dark-only palette to match the Gateway brand.
+ * Dark and light palettes for Gateway.
  */
 
 export const Colors = {
@@ -77,3 +77,11 @@ export const Spacing = {
 } as const;
 
 export type GatewayColor = keyof typeof Colors;
+
+export const LightColors = {
+  canvas: '#f8f5ed', surface: '#fffdf7', surfaceCard: '#fffdf7', panel: '#efebe2',
+  highlight: '#e5e9df', field: '#fffefa', footer: '#ece9df',
+  inkPrimary: '#19241f', inkSecondary: '#495950',
+  gold: '#8a5416', goldHover: '#75430b', terracotta: '#973d28',
+  line: '#c7cfc4', edge: '#788477', danger: '#9a3521', success: '#16654a',
+} as const;

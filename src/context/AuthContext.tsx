@@ -11,7 +11,7 @@ import React, {
   useRef,
 } from 'react';
 import { User, Role, OrganizerStatus } from '../types/api';
-import { authApi } from '../lib/api';
+import { ApiError, authApi } from '../lib/api';
 import { getToken, removeToken } from '../lib/tokenStore';
 
 interface AuthContextType {
@@ -38,7 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState(true);
   const initialized = useRef(false);
 
-  const refreshUser = useCallback(async () => {
+  const loadUser = useCallback(async (forLogin = false) => {
     const token = await getToken();
     if (!token) {
       setUser(null);
@@ -49,13 +49,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const userData = await authApi.getMe();
       setUser(userData);
-    } catch {
-      await removeToken();
-      setUser(null);
+    } catch (error) {
+      if (error instanceof ApiError && [401, 403].includes(error.statusCode)) {
+        await removeToken();
+        setUser(null);
+      }
+      if (forLogin) throw error;
     } finally {
       setLoading(false);
     }
   }, []);
+
+  const refreshUser = useCallback(() => loadUser(), [loadUser]);
 
   useEffect(() => {
     if (!initialized.current) {
@@ -65,17 +70,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [refreshUser]);
 
   const login = async (email: string, password: string) => {
-    setLoading(true);
     try {
       await authApi.login(email, password);
-      await refreshUser();
+      await loadUser(true);
     } finally {
       setLoading(false);
     }
   };
 
   const logout = async () => {
-    setLoading(true);
     try {
       await authApi.logout();
     } catch {

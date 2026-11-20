@@ -1,3 +1,4 @@
+import { mobileLabels } from '../../lib/mobileLabels';
 /**
  * Gateway Mobile — Login Screen
  * Based on gateway-fe/src/app/login/page.tsx
@@ -17,9 +18,12 @@ import { Link, useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { GatewayLogo } from '../../components/GatewayLogo';
 import { ApiError } from '../../lib/api';
-import { Colors } from '../../lib/theme';
+import { usePreferences, useColors } from '../../context/Preferences';
 
 export default function LoginScreen() {
+  const { language: uiLanguage } = usePreferences();
+  const ui = (label: string) => uiLanguage === 'id' ? mobileLabels[label] ?? label : label;
+  const Colors = useColors();
   const { login } = useAuth();
   const router = useRouter();
 
@@ -31,7 +35,7 @@ export default function LoginScreen() {
 
   const handleSubmit = async () => {
     if (!email.trim() || !password) {
-      setError('Please enter your email and password.');
+      setError(ui('Please enter your email and password.'));
       return;
     }
 
@@ -47,7 +51,7 @@ export default function LoginScreen() {
           ? err.message
           : err instanceof Error
             ? err.message
-            : 'Failed to sign in. Please verify your credentials.';
+            : ui('Failed to sign in. Please verify your credentials.');
       setError(msg);
     } finally {
       setLoading(false);
@@ -78,9 +82,7 @@ export default function LoginScreen() {
             <Text
               style={{ color: Colors.inkSecondary }}
               className="text-ink-secondary text-xs tracking-widest uppercase font-mono mt-1"
-            >
-              The Live Experience
-            </Text>
+            >{ui("The Live Experience")}</Text>
           </View>
 
           {/* Auth Panel */}
@@ -99,9 +101,7 @@ export default function LoginScreen() {
               <Text
                 style={{ color: Colors.inkPrimary }}
                 className="text-ink-primary font-bold text-2xl tracking-tight"
-              >
-                Sign In to Gateway
-              </Text>
+              >{ui("Sign In to Gateway")}</Text>
             </View>
 
             {/* Error */}
@@ -128,9 +128,7 @@ export default function LoginScreen() {
               <Text
                 style={{ color: Colors.inkPrimary }}
                 className="text-ink-primary font-mono text-xs uppercase tracking-widest font-bold mb-2"
-              >
-                Email Address
-              </Text>
+              >{ui("Email Address")}</Text>
               <TextInput
                 value={email}
                 onChangeText={setEmail}
@@ -156,16 +154,12 @@ export default function LoginScreen() {
                 <Text
                   style={{ color: Colors.inkPrimary }}
                   className="text-ink-primary font-mono text-xs uppercase tracking-widest font-bold"
-                >
-                  Password
-                </Text>
+                >{ui("Password")}</Text>
                 <Link
                   href="/(auth)/forgot-password"
                   style={{ color: Colors.inkSecondary }}
                   className="text-ink-secondary text-xs font-mono underline"
-                >
-                  Forgot?
-                </Link>
+                >{ui("Forgot?")}{" "}</Link>
               </View>
               <View className="relative">
                 <TextInput
@@ -191,7 +185,7 @@ export default function LoginScreen() {
                     style={{ color: Colors.inkSecondary }}
                     className="text-ink-secondary text-xs font-mono"
                   >
-                    {showPassword ? 'HIDE' : 'SHOW'}
+                    {showPassword ? ui('HIDE') : ui('SHOW')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -212,7 +206,7 @@ export default function LoginScreen() {
                 style={{ color: Colors.canvas }}
                 className="text-canvas font-bold text-sm uppercase tracking-widest"
               >
-                {loading ? 'AUTHENTICATING...' : 'SIGN IN'}
+                {loading ? ui('AUTHENTICATING...') : ui('SIGN IN')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -222,16 +216,12 @@ export default function LoginScreen() {
             <Text
               style={{ color: Colors.inkSecondary }}
               className="text-ink-secondary text-xs font-mono"
-            >
-              Don't have an account?
-            </Text>
+            >{ui("Don't have an account?")}</Text>
             <Link
               href="/(auth)/register"
               style={{ color: Colors.inkPrimary }}
               className="text-ink-primary text-xs font-mono font-bold underline"
-            >
-              Create account
-            </Link>
+            >{ui("Create account")}{" "}</Link>
           </View>
         </View>
       </ScrollView>

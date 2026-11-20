@@ -1,3 +1,4 @@
+import { mobileLabels } from '../lib/mobileLabels';
 /**
  * Gateway Mobile — Event Card Component
  * Based on .concert-card in globals.css
@@ -6,7 +7,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
 import { Event } from '../types/api';
-import { Colors } from '../lib/theme';
+import { usePreferences, useColors } from '../context/Preferences';
 
 interface EventCardProps {
   event: Event;
@@ -15,6 +16,9 @@ interface EventCardProps {
 }
 
 export function EventCard({ event, price, onPress }: EventCardProps) {
+  const { language: uiLanguage } = usePreferences();
+  const ui = (label: string) => uiLanguage === 'id' ? mobileLabels[label] ?? label : label;
+  const Colors = useColors();
   const formatDate = (dateStr: string) =>
     new Date(dateStr).toLocaleDateString('id-ID', {
       day: 'numeric',
@@ -125,8 +129,7 @@ export function EventCard({ event, price, onPress }: EventCardProps) {
                 color: Colors.inkSecondary,
                 fontFamily: 'monospace',
               }}
-            >
-              From{' '}
+            >{ui("From")}{' '}
             </Text>
             <Text
               style={{
@@ -144,9 +147,7 @@ export function EventCard({ event, price, onPress }: EventCardProps) {
               color: Colors.inkSecondary,
               fontFamily: 'monospace',
             }}
-          >
-            Get tickets →
-          </Text>
+          >{ui("Get tickets →")}</Text>
         </View>
       </View>
     </TouchableOpacity>

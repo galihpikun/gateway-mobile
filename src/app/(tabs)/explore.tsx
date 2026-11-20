@@ -1,3 +1,4 @@
+import { mobileLabels } from '../../lib/mobileLabels';
 /**
  * Gateway Mobile — Explore Screen
  * Full event catalog with search + category filter.
@@ -16,10 +17,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { eventApi, categoryApi } from '../../lib/api';
 import { Event, Category } from '../../types/api';
-import { Colors } from '../../lib/theme';
+import { usePreferences, useColors } from '../../context/Preferences';
 import { EventCard } from '../../components/EventCard';
 
 export default function ExploreScreen() {
+  const { language: uiLanguage } = usePreferences();
+  const ui = (label: string) => uiLanguage === 'id' ? mobileLabels[label] ?? label : label;
+  const Colors = useColors();
   const router = useRouter();
 
   const [events, setEvents] = useState<Event[]>([]);
@@ -50,6 +54,7 @@ export default function ExploreScreen() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Start the initial request and reset its error state.
     fetchData();
   }, [fetchData]);
 
@@ -78,9 +83,9 @@ export default function ExploreScreen() {
       event.ticketTypes
         ?.filter((t) => t.availableQuota > 0)
         .map((t) => Number(t.price)) || [];
-    if (!prices.length) return 'Sold out';
+    if (!prices.length) return ui('Sold out');
     const min = Math.min(...prices);
-    if (min === 0) return 'Free';
+    if (min === 0) return ui('Free');
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
@@ -96,12 +101,8 @@ export default function ExploreScreen() {
     >
       {/* Header */}
       <View className="px-4 pt-4 pb-3 border-b border-line">
-        <Text className="text-ink-primary font-bold text-xl tracking-tight">
-          Explore Concerts
-        </Text>
-        <Text className="text-ink-secondary text-xs font-mono mt-0.5">
-          FIND YOUR FREQUENCY
-        </Text>
+        <Text className="text-ink-primary font-bold text-xl tracking-tight">{ui("Explore Concerts")}</Text>
+        <Text className="text-ink-secondary text-xs font-mono mt-0.5">{ui("FIND YOUR FREQUENCY")}</Text>
       </View>
 
       <ScrollView
@@ -125,7 +126,7 @@ export default function ExploreScreen() {
                 setSearch(t);
                 setPage(1);
               }}
-              placeholder="Artist, concert or city"
+              placeholder={ui("Artist, concert or city")}
               placeholderTextColor={Colors.inkSecondary + '80'}
               className="flex-1 text-ink-primary text-xs font-mono"
             />
@@ -165,9 +166,7 @@ export default function ExploreScreen() {
                       ? 'text-ink-primary'
                       : 'text-ink-secondary'
                   }`}
-                >
-                  All
-                </Text>
+                >{ui("All")}</Text>
               </TouchableOpacity>
               {categories.map((cat) => (
                 <TouchableOpacity
@@ -207,9 +206,7 @@ export default function ExploreScreen() {
             </View>
           ) : error ? (
             <View className="border border-line p-8 items-center rounded-sm">
-              <Text className="text-ink-primary font-bold mb-2">
-                Could not load concerts
-              </Text>
+              <Text className="text-ink-primary font-bold mb-2">{ui("Could not load concerts")}</Text>
               <TouchableOpacity
                 onPress={() => {
                   setLoading(true);
@@ -217,16 +214,12 @@ export default function ExploreScreen() {
                 }}
                 className="border border-edge px-4 py-2 rounded-sm mt-2"
               >
-                <Text className="text-ink-primary text-xs font-mono">
-                  Retry
-                </Text>
+                <Text className="text-ink-primary text-xs font-mono">{ui("Retry")}</Text>
               </TouchableOpacity>
             </View>
           ) : visible.length === 0 ? (
             <View className="border border-line p-8 items-center rounded-sm">
-              <Text className="text-ink-primary font-bold mb-2">
-                No concerts found
-              </Text>
+              <Text className="text-ink-primary font-bold mb-2">{ui("No concerts found")}</Text>
               {Boolean(search || selectedCategory) && (
                 <TouchableOpacity
                   onPress={() => {
@@ -236,9 +229,7 @@ export default function ExploreScreen() {
                   }}
                   className="border border-edge px-4 py-2 rounded-sm mt-2"
                 >
-                  <Text className="text-ink-primary text-xs font-mono">
-                    Clear filters
-                  </Text>
+                  <Text className="text-ink-primary text-xs font-mono">{ui("Clear filters")}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -267,9 +258,7 @@ export default function ExploreScreen() {
                   page === 1 ? 'opacity-40' : ''
                 }`}
               >
-                <Text className="text-ink-primary text-xs font-mono">
-                  Previous
-                </Text>
+                <Text className="text-ink-primary text-xs font-mono">{ui("Previous")}</Text>
               </TouchableOpacity>
               <Text className="text-ink-secondary text-xs font-mono">
                 {page} / {totalPages}
@@ -281,9 +270,7 @@ export default function ExploreScreen() {
                   page === totalPages ? 'opacity-40' : ''
                 }`}
               >
-                <Text className="text-ink-primary text-xs font-mono">
-                  Next
-                </Text>
+                <Text className="text-ink-primary text-xs font-mono">{ui("Next")}</Text>
               </TouchableOpacity>
             </View>
           )}

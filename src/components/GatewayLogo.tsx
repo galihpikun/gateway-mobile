@@ -4,14 +4,16 @@
  */
 import React from 'react';
 import { View } from 'react-native';
-import { Colors } from '../lib/theme';
+import { useColors } from '../context/Preferences';
 
 interface GatewayLogoProps {
   size?: number;
   color?: string;
 }
 
-export function GatewayLogo({ size = 32, color = Colors.gold }: GatewayLogoProps) {
+export function GatewayLogo({ size = 32, color: logoColor }: GatewayLogoProps) {
+  const Colors = useColors();
+  const color = logoColor ?? Colors.gold;
   const s = size;
   const r = s * 0.1;
 

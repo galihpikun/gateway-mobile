@@ -1,56 +1,26 @@
-# Welcome to your Expo app 👋
+# Gateway Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplikasi Expo untuk menjelajahi konser, memesan tiket, mengelola konser, dan memeriksa tiket di gerbang. Mobile menggunakan database dan API yang sama dengan Gateway Web melalui `gateway-be`.
 
-## Get started
+## Menjalankan secara lokal
 
-1. Install dependencies
+1. Jalankan `npm run dev` dari direktori `gateway-be` setelah menyiapkan database dan konfigurasi backend. Backend lokal memakai port `3001` secara default.
+2. Dari direktori `gateway-mobile`, jalankan `npm ci`, lalu salin `.env.example` ke `.env`.
+3. Jalankan `npx expo start`. Tekan `w` untuk web, `a` untuk Android emulator, atau pindai QR dari perangkat yang dapat mengakses Metro dan backend di jaringan lokal.
 
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```dotenv
+EXPO_PUBLIC_API_URL=http://localhost:3001
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+Dengan nilai di atas, web lokal dan iOS Simulator memakai `localhost`, Android Emulator standar memakai `10.0.2.2`, dan perangkat fisik di mode LAN memakai alamat komputer dari Expo Metro. Jika menggunakan tunnel Metro atau Metro berjalan di komputer berbeda dari backend, masukkan langsung alamat yang dapat dijangkau perangkat, misalnya `http://192.168.1.10:3001` untuk jaringan lokal. Bila gagal tersambung dari ponsel, buka `http://<IP-komputer>:3001/api/events` di browser ponsel dan periksa koneksi Wi-Fi serta aturan firewall untuk port `3001`.
 
-### Other setup steps
+Untuk distribusi aplikasi, isi variabel dengan URL HTTPS backend sebelum bundling. `EXPO_PUBLIC_API_URL` ikut masuk ke bundle aplikasi. Kredensial database, Xendit, Cloudinary, dan Resend ditempatkan di `gateway-be`.
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## Alur berdasarkan peran
 
-## Learn more
+- **Pembeli** membuka konser, memilih jumlah tiket, mengisi data pembeli, lalu melanjutkan pembayaran di Xendit. Status diperbarui di Pesanan Saya dan QR muncul di Tiket Saya ketika backend mengonfirmasi pembayaran.
+- **Organizer** membuat konser di Studio Organizer, memilih denah dan zona tiket, lalu mengunggah video preview serta background tiket. Organizer yang disetujui tidak dapat memesan tiket.
+- **Admin** membuka Panel Admin dari Profil untuk meninjau konser, organizer dan dokumennya, refund, serta pengguna. Scanner Gerbang juga tersedia untuk admin.
+- **Staf** membuka Scanner Gerbang dari Profil, memilih konser penugasan, memindai QR atau memasukkan kode, lalu mengonfirmasi check-in.
 
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Jalankan `npm run lint`, `npx tsc --noEmit`, dan `npx expo export --platform all` untuk memeriksa proyek.

@@ -1,3 +1,4 @@
+import { mobileLabels } from '../../../lib/mobileLabels';
 /**
  * Gateway Mobile — Create New Event Screen
  * Mirrors gateway-fe/src/app/organizer/events/new/page.tsx
@@ -18,9 +19,13 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../../../context/AuthContext';
 import { categoryApi, eventApi } from '../../../lib/api';
 import { Category } from '../../../types/api';
-import { Colors } from '../../../lib/theme';
+import { EventMediaFields, ZoneChoices, type MediaField } from '../../../components/EventMediaFields';
+import { venueZones } from '../../../lib/venueLayouts';
+import { parseEventDate } from '../../../lib/eventDates';
+import { usePreferences, useColors } from '../../../context/Preferences';
 import {
   pickImageDocument,
+  pickVideoDocument,
   appendDocumentToFormData,
   PickedDocument,
 } from '../../../lib/filePicker';
@@ -33,14 +38,10 @@ interface TicketTierInput {
   viewPosition?: string;
 }
 
-const VENUE_LAYOUTS = [
-  { id: 'ARENA_CONCERT_2D', name: 'Standard Arena Concert' },
-  { id: 'FESTIVAL_OPENAIR_2D', name: 'Festival Open Air Grounds' },
-  { id: 'THEATER_HALL_2D', name: 'Auditorium & Theater Hall' },
-  { id: 'CLUB_INTIMATE_2D', name: 'Intimate Club Stage' },
-];
-
 export default function NewEventScreen() {
+  const { language: uiLanguage } = usePreferences();
+  const ui = (label: string) => uiLanguage === 'id' ? mobileLabels[label] ?? label : label;
+  const Colors = useColors();
   const router = useRouter();
   const { user, isOrganizerApproved, loading: authLoading } = useAuth();
 
@@ -55,7 +56,9 @@ export default function NewEventScreen() {
   const [startDatetime, setStartDatetime] = useState('');
   const [endDatetime, setEndDatetime] = useState('');
   const [isRefundable, setIsRefundable] = useState(true);
-  const [venueLayout, setVenueLayout] = useState('ARENA_CONCERT_2D');
+  const [venueLayout, setVenueLayout] = useState('ARENA');
+
+  const [media, setMedia] = useState<Partial<Record<MediaField, PickedDocument>>>({});
 
   // Files
   const [coverImage, setCoverImage] = useState<PickedDocument | null>(null);
@@ -130,15 +133,22 @@ export default function NewEventScreen() {
     try {
       const doc = await pickImageDocument();
       if (doc) {
-        if (doc.size > 5 * 1024 * 1024) {
+        if ((doc.size ?? 0) > 5 * 1024 * 1024) {
           Alert.alert('File Too Large', 'Cover image must be 5MB or less.');
           return;
         }
         setCoverImage(doc);
       }
     } catch (err) {
-      console.warn('Pick cover image error:', err);
+      setError(err instanceof Error ? err.message : 'Unable to pick a cover image.');
     }
+  };
+
+  const pickMedia = async (field: MediaField) => {
+    try {
+      const doc = await (field === 'previewVideo' ? pickVideoDocument() : pickImageDocument());
+      if (doc) setMedia(current => ({ ...current, [field]: doc }));
+    } catch (failure) { setError(failure instanceof Error ? failure.message : 'Unable to select media.'); }
   };
 
   const handleSubmit = async () => {
@@ -159,10 +169,10 @@ export default function NewEventScreen() {
       return;
     }
 
-    const startDate = new Date(startDatetime.trim());
-    const endDate = new Date(endDatetime.trim());
+    const startDate = parseEventDate(startDatetime);
+    const endDate = parseEventDate(endDatetime);
 
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    if (!startDate || !endDate) {
       setError('Please provide valid ISO dates (e.g. 2026-12-31 19:00).');
       return;
     }
@@ -177,6 +187,15 @@ export default function NewEventScreen() {
       return;
     }
 
+    if (!media.previewVideo || !media.ticketBackground) {
+      setError('Video preview and ticket background are required.');
+      return;
+    }
+    const availableZones = venueZones(venueLayout);
+    if (ticketTiers.some(tier => !availableZones.some(zone => zone === tier.viewPosition))) {
+      setError('Select a valid venue zone for each ticket tier.');
+      return;
+    }
     // Validate ticket tiers
     for (const tier of ticketTiers) {
       if (!tier.name.trim()) {
@@ -187,7 +206,7 @@ export default function NewEventScreen() {
         setError(`Ticket tier "${tier.name}" cannot have a negative price.`);
         return;
       }
-      if (tier.quota < 1) {
+      if (!Number.isSafeInteger(tier.quota) || tier.quota < 1) {
         setError(`Ticket tier "${tier.name}" must have a quota of at least 1.`);
         return;
       }
@@ -206,6 +225,7 @@ export default function NewEventScreen() {
       formData.append('venueLayout', venueLayout);
 
       appendDocumentToFormData(formData, 'coverImage', coverImage);
+      for (const [field, file] of Object.entries(media)) appendDocumentToFormData(formData, field, file);
 
       formData.append(
         'ticketTypes',
@@ -253,16 +273,12 @@ export default function NewEventScreen() {
           <Text
             style={{ color: Colors.inkSecondary }}
             className="font-mono text-xs uppercase tracking-wider"
-          >
-            ← Cancel
-          </Text>
+          >{ui("← Cancel")}</Text>
         </TouchableOpacity>
         <Text
           style={{ color: Colors.gold }}
           className="font-mono text-xs uppercase tracking-widest font-bold"
-        >
-          NEW EVENT
-        </Text>
+        >{ui("NEW EVENT")}</Text>
       </View>
 
       <ScrollView
@@ -277,21 +293,15 @@ export default function NewEventScreen() {
           <Text
             style={{ color: Colors.inkSecondary }}
             className="font-mono text-xs uppercase tracking-widest mb-1"
-          >
-            NEW EVENT PUBLICATION // PRODUCTION DRAFT
-          </Text>
+          >{ui("NEW EVENT PUBLICATION // PRODUCTION DRAFT")}</Text>
           <Text
             style={{ color: Colors.inkPrimary }}
             className="text-2xl font-bold tracking-tight mb-1"
-          >
-            Create Live Event
-          </Text>
+          >{ui("Create Live Event")}</Text>
           <Text
             style={{ color: Colors.inkSecondary }}
             className="text-xs font-mono"
-          >
-            Configure production details, promotional artwork, and tiered ticketing inventory.
-          </Text>
+          >{ui("Configure production details, promotional artwork, and tiered ticketing inventory.")}</Text>
         </View>
 
         {Boolean(error) && (
@@ -324,21 +334,17 @@ export default function NewEventScreen() {
           <Text
             style={{ color: Colors.gold }}
             className="font-mono text-xs font-bold uppercase tracking-widest mb-4"
-          >
-            1. Event Production Details
-          </Text>
+          >{ui("1. Event Production Details")}</Text>
 
           <View className="mb-3">
             <Text
               style={{ color: Colors.inkSecondary }}
               className="font-mono text-[10px] uppercase tracking-wider mb-1"
-            >
-              Event Title *
-            </Text>
+            >{ui("Event Title *")}</Text>
             <TextInput
               value={title}
               onChangeText={setTitle}
-              placeholder="e.g. Symphony of the Archipelago Live"
+              placeholder={ui("e.g. Symphony of the Archipelago Live")}
               placeholderTextColor={Colors.edge}
               style={{
                 backgroundColor: Colors.canvas,
@@ -355,9 +361,7 @@ export default function NewEventScreen() {
             <Text
               style={{ color: Colors.inkSecondary }}
               className="font-mono text-[10px] uppercase tracking-wider mb-1"
-            >
-              Category *
-            </Text>
+            >{ui("Category *")}</Text>
             {categoriesLoading ? (
               <ActivityIndicator size="small" color={Colors.gold} />
             ) : (
@@ -403,13 +407,11 @@ export default function NewEventScreen() {
             <Text
               style={{ color: Colors.inkSecondary }}
               className="font-mono text-[10px] uppercase tracking-wider mb-1"
-            >
-              Description *
-            </Text>
+            >{ui("Description *")}</Text>
             <TextInput
               value={description}
               onChangeText={setDescription}
-              placeholder="Full event narrative, artist lineup, schedule, and age policies"
+              placeholder={ui("Full event narrative, artist lineup, schedule, and age policies")}
               placeholderTextColor={Colors.edge}
               multiline
               numberOfLines={3}
@@ -427,13 +429,11 @@ export default function NewEventScreen() {
             <Text
               style={{ color: Colors.inkSecondary }}
               className="font-mono text-[10px] uppercase tracking-wider mb-1"
-            >
-              Venue / Location *
-            </Text>
+            >{ui("Venue / Location *")}</Text>
             <TextInput
               value={location}
               onChangeText={setLocation}
-              placeholder="e.g. Istora Senayan, Jakarta Pusat"
+              placeholder={ui("e.g. Istora Senayan, Jakarta Pusat")}
               placeholderTextColor={Colors.edge}
               style={{
                 backgroundColor: Colors.canvas,
@@ -450,9 +450,7 @@ export default function NewEventScreen() {
               <Text
                 style={{ color: Colors.inkSecondary }}
                 className="font-mono text-[10px] uppercase tracking-wider mb-1"
-              >
-                Start Datetime *
-              </Text>
+              >{ui("Start Datetime *")}</Text>
               <TextInput
                 value={startDatetime}
                 onChangeText={setStartDatetime}
@@ -472,9 +470,7 @@ export default function NewEventScreen() {
               <Text
                 style={{ color: Colors.inkSecondary }}
                 className="font-mono text-[10px] uppercase tracking-wider mb-1"
-              >
-                End Datetime *
-              </Text>
+              >{ui("End Datetime *")}</Text>
               <TextInput
                 value={endDatetime}
                 onChangeText={setEndDatetime}
@@ -497,15 +493,11 @@ export default function NewEventScreen() {
               <Text
                 style={{ color: Colors.inkPrimary }}
                 className="font-mono text-xs uppercase font-bold"
-              >
-                Customer Refund Requests
-              </Text>
+              >{ui("Customer Refund Requests")}</Text>
               <Text
                 style={{ color: Colors.inkSecondary }}
                 className="text-[11px]"
-              >
-                Allow attendees to request refunds before the cutoff window
-              </Text>
+              >{ui("Allow attendees to request refunds before the cutoff window")}</Text>
             </View>
             <Switch
               value={isRefundable}
@@ -528,18 +520,14 @@ export default function NewEventScreen() {
           <Text
             style={{ color: Colors.gold }}
             className="font-mono text-xs font-bold uppercase tracking-widest mb-3"
-          >
-            2. Media & Venue Layout
-          </Text>
+          >{ui("2. Media & Venue Layout")}</Text>
 
           {/* Cover image picker */}
           <View className="mb-4">
             <Text
               style={{ color: Colors.inkSecondary }}
               className="font-mono text-[10px] uppercase tracking-wider mb-1.5"
-            >
-              Primary Event Cover Artwork *
-            </Text>
+            >{ui("Primary Event Cover Artwork *")}</Text>
             <TouchableOpacity
               onPress={handlePickCoverImage}
               style={{
@@ -558,74 +546,30 @@ export default function NewEventScreen() {
                 }}
                 className="font-mono text-xs uppercase font-semibold"
               >
-                {coverImage ? 'Change Cover Image' : '+ Select Cover Image (JPEG/PNG)'}
+                {coverImage ? 'Change Cover Image' : ui('+ Select Cover Image (JPEG/PNG)')}
               </Text>
               {Boolean(coverImage) && (
                 <Text
                   style={{ color: Colors.gold }}
                   className="font-mono text-[10px] font-bold"
-                >
-                  ✓ Attached
-                </Text>
+                >{ui("✓ Attached")}</Text>
               )}
             </TouchableOpacity>
             {Boolean(coverImage) && (
               <Text
                 style={{ color: Colors.inkSecondary }}
                 className="font-mono text-[10px] mt-1"
-              >
-                Selected: {coverImage?.name} (
+              >{ui("Selected:")}{" "}{coverImage?.name} (
                 {(Number(coverImage?.size || 0) / 1024 / 1024).toFixed(2)} MB)
               </Text>
             )}
           </View>
 
-          {/* Venue Layout selection */}
-          <View>
-            <Text
-              style={{ color: Colors.inkSecondary }}
-              className="font-mono text-[10px] uppercase tracking-wider mb-1.5"
-            >
-              Venue Layout Model
-            </Text>
-            <View className="space-y-2">
-              {VENUE_LAYOUTS.map((vl) => {
-                const isSelected = venueLayout === vl.id;
-                return (
-                  <TouchableOpacity
-                    key={vl.id}
-                    onPress={() => setVenueLayout(vl.id)}
-                    style={{
-                      backgroundColor: isSelected
-                        ? Colors.gold + '15'
-                        : Colors.canvas,
-                      borderColor: isSelected ? Colors.gold : Colors.line,
-                      borderWidth: 1,
-                    }}
-                    className="p-3 rounded-sm flex-row items-center justify-between mb-2"
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={{
-                        color: isSelected ? Colors.gold : Colors.inkPrimary,
-                      }}
-                      className="font-mono text-xs uppercase font-bold"
-                    >
-                      {vl.name}
-                    </Text>
-                    <Text
-                      style={{
-                        color: isSelected ? Colors.gold : Colors.inkSecondary,
-                      }}
-                      className="font-mono text-xs"
-                    >
-                      {isSelected ? '●' : '○'}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
+        </View>
+        <View className="mb-6">
+          <EventMediaFields layout={venueLayout} onLayout={setVenueLayout}
+            names={{ previewVideo: media.previewVideo?.name, ticketBackground: media.ticketBackground?.name, venueImage: media.venueImage?.name }}
+            onPick={field => { void pickMedia(field); }} disabled={submitting} />
         </View>
 
         {/* Section 3: Ticket Tiers */}
@@ -641,9 +585,7 @@ export default function NewEventScreen() {
             <Text
               style={{ color: Colors.gold }}
               className="font-mono text-xs font-bold uppercase tracking-widest"
-            >
-              3. Ticket Inventory Tiers
-            </Text>
+            >{ui("3. Ticket Inventory Tiers")}</Text>
             <TouchableOpacity
               onPress={handleAddTier}
               style={{
@@ -657,9 +599,7 @@ export default function NewEventScreen() {
               <Text
                 style={{ color: Colors.gold }}
                 className="font-mono text-[10px] uppercase font-bold"
-              >
-                + Add Tier
-              </Text>
+              >{ui("+ Add Tier")}</Text>
             </TouchableOpacity>
           </View>
 
@@ -677,8 +617,7 @@ export default function NewEventScreen() {
                 <Text
                   style={{ color: Colors.inkPrimary }}
                   className="font-mono text-xs font-bold uppercase"
-                >
-                  Tier #{index + 1}
+                >{ui("Tier #")}{index + 1}
                 </Text>
                 {ticketTiers.length > 1 && (
                   <TouchableOpacity
@@ -688,24 +627,23 @@ export default function NewEventScreen() {
                     <Text
                       style={{ color: Colors.terracotta }}
                       className="font-mono text-[10px] uppercase font-bold"
-                    >
-                      Remove
-                    </Text>
+                    >{ui("Remove")}</Text>
                   </TouchableOpacity>
                 )}
               </View>
+
+              <ZoneChoices layout={venueLayout} value={tier.viewPosition} disabled={submitting}
+                onChange={zone => handleUpdateTier(tier.id, 'viewPosition', zone)} />
 
               <View className="mb-2">
                 <Text
                   style={{ color: Colors.inkSecondary }}
                   className="font-mono text-[9px] uppercase tracking-wider mb-0.5"
-                >
-                  Tier Name (e.g. VIP, Festival, Standing)
-                </Text>
+                >{ui("Tier Name (e.g. VIP, Festival, Standing)")}</Text>
                 <TextInput
                   value={tier.name}
                   onChangeText={(val) => handleUpdateTier(tier.id, 'name', val)}
-                  placeholder="e.g. VIP Gold Access"
+                  placeholder={ui("e.g. VIP Gold Access")}
                   placeholderTextColor={Colors.edge}
                   style={{
                     backgroundColor: Colors.surface,
@@ -722,9 +660,7 @@ export default function NewEventScreen() {
                   <Text
                     style={{ color: Colors.inkSecondary }}
                     className="font-mono text-[9px] uppercase tracking-wider mb-0.5"
-                  >
-                    Price (IDR)
-                  </Text>
+                  >{ui("Price (IDR)")}</Text>
                   <TextInput
                     value={String(tier.price)}
                     onChangeText={(val) =>
@@ -747,9 +683,7 @@ export default function NewEventScreen() {
                   <Text
                     style={{ color: Colors.inkSecondary }}
                     className="font-mono text-[9px] uppercase tracking-wider mb-0.5"
-                  >
-                    Total Quota
-                  </Text>
+                  >{ui("Total Quota")}</Text>
                   <TextInput
                     value={String(tier.quota)}
                     onChangeText={(val) =>
@@ -790,7 +724,7 @@ export default function NewEventScreen() {
             style={{ color: Colors.canvas }}
             className="font-mono text-xs uppercase tracking-widest font-black"
           >
-            {submitting ? 'Creating Event...' : 'Create Live Event Listing'}
+            {submitting ? ui('Creating Event...') : ui('Create Live Event Listing')}
           </Text>
         </TouchableOpacity>
       </ScrollView>

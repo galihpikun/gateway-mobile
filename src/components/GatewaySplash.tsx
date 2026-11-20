@@ -1,3 +1,4 @@
+import { mobileLabels } from '../lib/mobileLabels';
 /**
  * Gateway Mobile — Gateway Splash Screen
  * Shows during auth session initialization.
@@ -5,10 +6,13 @@
 import React, { useEffect } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
-import { Colors } from '../lib/theme';
+import { usePreferences, useColors } from '../context/Preferences';
 import { GatewayLogo } from './GatewayLogo';
 
 export function GatewaySplash() {
+  const { language: uiLanguage } = usePreferences();
+  const ui = (label: string) => uiLanguage === 'id' ? mobileLabels[label] ?? label : label;
+  const Colors = useColors();
   useEffect(() => {
     // Hide the native splash once our component is mounted
     SplashScreen.hideAsync().catch(() => {});
@@ -43,9 +47,7 @@ export function GatewaySplash() {
           textTransform: 'uppercase',
           fontFamily: 'monospace',
         }}
-      >
-        The Live Experience
-      </Text>
+      >{ui("The Live Experience")}</Text>
       <ActivityIndicator
         size="small"
         color={Colors.gold}

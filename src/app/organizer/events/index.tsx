@@ -1,3 +1,4 @@
+import { mobileLabels } from '../../../lib/mobileLabels';
 /**
  * Gateway Mobile — Organizer Studio / Workbench
  * Mirrors gateway-fe/src/app/organizer/events/page.tsx
@@ -18,7 +19,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../../../context/AuthContext';
 import { eventApi } from '../../../lib/api';
 import { Event, EventStatus } from '../../../types/api';
-import { Colors } from '../../../lib/theme';
+import { usePreferences, useColors } from '../../../context/Preferences';
 
 const STATUS_FILTERS: { label: string; value: string }[] = [
   { label: 'ALL', value: 'ALL' },
@@ -30,6 +31,9 @@ const STATUS_FILTERS: { label: string; value: string }[] = [
 ];
 
 export default function OrganizerEventsScreen() {
+  const { language: uiLanguage } = usePreferences();
+  const ui = (label: string) => uiLanguage === 'id' ? mobileLabels[label] ?? label : label;
+  const Colors = useColors();
   const router = useRouter();
   const { user, isOrganizerApproved, loading: authLoading } = useAuth();
 
@@ -74,6 +78,7 @@ export default function OrganizerEventsScreen() {
 
   useEffect(() => {
     if (user && isOrganizerApproved) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Set loading before fetching the requested page.
       fetchEvents();
     }
   }, [user, isOrganizerApproved, fetchEvents]);
@@ -169,7 +174,7 @@ export default function OrganizerEventsScreen() {
       case 'COMPLETED':
         return { label: 'COMPLETED', color: Colors.edge };
       case 'REJECTED':
-      case 'CANCELLED':
+      case ui('CANCELLED'):
         return { label: status, color: Colors.terracotta };
       default:
         return { label: status, color: Colors.inkSecondary };
@@ -195,9 +200,7 @@ export default function OrganizerEventsScreen() {
           <Text
             style={{ color: Colors.inkSecondary }}
             className="font-mono text-xs uppercase tracking-wider"
-          >
-            ← Back
-          </Text>
+          >{ui("← Back")}</Text>
         </TouchableOpacity>
 
         <View className="flex-row items-center gap-2">
@@ -214,9 +217,7 @@ export default function OrganizerEventsScreen() {
             <Text
               style={{ color: Colors.inkPrimary }}
               className="font-mono text-[11px] uppercase tracking-wider"
-            >
-              Refunds
-            </Text>
+            >{ui("Refunds")}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -228,9 +229,7 @@ export default function OrganizerEventsScreen() {
             <Text
               style={{ color: Colors.canvas }}
               className="font-mono text-xs uppercase tracking-widest font-black"
-            >
-              + New Event
-            </Text>
+            >{ui("+ New Event")}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -254,15 +253,11 @@ export default function OrganizerEventsScreen() {
           <Text
             style={{ color: Colors.inkSecondary }}
             className="font-mono text-xs uppercase tracking-widest mb-1"
-          >
-            PROMOTER WORKBENCH // EVENT MANAGEMENT
-          </Text>
+          >{ui("PROMOTER WORKBENCH // EVENT MANAGEMENT")}</Text>
           <Text
             style={{ color: Colors.inkPrimary }}
             className="text-2xl font-bold tracking-tight mb-3"
-          >
-            Organizer Studio
-          </Text>
+          >{ui("Organizer Studio")}</Text>
 
           {/* Status Filters Scroll */}
           <ScrollView
@@ -347,9 +342,7 @@ export default function OrganizerEventsScreen() {
             <Text
               style={{ color: Colors.inkSecondary }}
               className="font-mono text-xs uppercase tracking-widest mt-3"
-            >
-              Loading organizer events...
-            </Text>
+            >{ui("Loading organizer events...")}</Text>
           </View>
         ) : events.length === 0 ? (
           <View
@@ -363,9 +356,7 @@ export default function OrganizerEventsScreen() {
             <Text
               style={{ color: Colors.inkSecondary }}
               className="font-mono text-xs uppercase tracking-widest font-bold mb-2 text-center"
-            >
-              NO ORGANIZER EVENTS FOUND
-            </Text>
+            >{ui("NO ORGANIZER EVENTS FOUND")}</Text>
             <Text
               style={{ color: Colors.inkSecondary }}
               className="text-xs text-center leading-relaxed mb-4"
@@ -383,9 +374,7 @@ export default function OrganizerEventsScreen() {
               <Text
                 style={{ color: Colors.canvas }}
                 className="font-mono text-xs font-bold uppercase tracking-widest"
-              >
-                CREATE AN EVENT
-              </Text>
+              >{ui("CREATE AN EVENT")}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -427,9 +416,7 @@ export default function OrganizerEventsScreen() {
                           <Text
                             style={{ color: Colors.inkSecondary }}
                             className="font-mono text-[9px]"
-                          >
-                            NO COVER
-                          </Text>
+                          >{ui("NO COVER")}</Text>
                         </View>
                       )}
                     </View>
@@ -503,8 +490,7 @@ export default function OrganizerEventsScreen() {
                       <Text
                         style={{ color: Colors.danger }}
                         className="font-mono text-[11px]"
-                      >
-                        Rejection Remark: {event.rejectionReason}
+                      >{ui("Rejection Remark:")}{" "}{event.rejectionReason}
                       </Text>
                     </View>
                   )}
@@ -559,9 +545,7 @@ export default function OrganizerEventsScreen() {
                           <Text
                             style={{ color: Colors.canvas }}
                             className="font-mono text-xs uppercase font-bold"
-                          >
-                            Submit for Review
-                          </Text>
+                          >{ui("Submit for Review")}</Text>
                         </TouchableOpacity>
                       </>
                     )}
@@ -582,9 +566,7 @@ export default function OrganizerEventsScreen() {
                           <Text
                             style={{ color: Colors.inkPrimary }}
                             className="font-mono text-xs uppercase tracking-wider"
-                          >
-                            View Live
-                          </Text>
+                          >{ui("View Live")}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -600,9 +582,7 @@ export default function OrganizerEventsScreen() {
                           <Text
                             style={{ color: Colors.gold }}
                             className="font-mono text-xs uppercase tracking-wider font-bold"
-                          >
-                            Staff Roster
-                          </Text>
+                          >{ui("Staff Roster")}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -619,9 +599,7 @@ export default function OrganizerEventsScreen() {
                           <Text
                             style={{ color: Colors.inkSecondary }}
                             className="font-mono text-xs uppercase tracking-wider"
-                          >
-                            Mark Completed
-                          </Text>
+                          >{ui("Mark Completed")}</Text>
                         </TouchableOpacity>
                       </>
                     )}
@@ -637,9 +615,7 @@ export default function OrganizerEventsScreen() {
                         <Text
                           style={{ color: Colors.canvas }}
                           className="font-mono text-xs uppercase font-bold"
-                        >
-                          Edit & Resubmit
-                        </Text>
+                        >{ui("Edit & Resubmit")}</Text>
                       </TouchableOpacity>
                     )}
 
@@ -659,9 +635,7 @@ export default function OrganizerEventsScreen() {
                         <Text
                           style={{ color: Colors.inkPrimary }}
                           className="font-mono text-xs uppercase tracking-wider"
-                        >
-                          View Details
-                        </Text>
+                        >{ui("View Details")}</Text>
                       </TouchableOpacity>
                     )}
                   </View>
@@ -686,16 +660,13 @@ export default function OrganizerEventsScreen() {
                   <Text
                     style={{ color: Colors.inkPrimary }}
                     className="font-mono text-xs uppercase"
-                  >
-                    Previous
-                  </Text>
+                  >{ui("Previous")}</Text>
                 </TouchableOpacity>
 
                 <Text
                   style={{ color: Colors.inkSecondary }}
                   className="font-mono text-xs"
-                >
-                  Page {page} of {totalPages}
+                >{ui("Page")}{" "}{page}{ui("of")}{" "}{totalPages}
                 </Text>
 
                 <TouchableOpacity
@@ -712,9 +683,7 @@ export default function OrganizerEventsScreen() {
                   <Text
                     style={{ color: Colors.inkPrimary }}
                     className="font-mono text-xs uppercase"
-                  >
-                    Next
-                  </Text>
+                  >{ui("Next")}</Text>
                 </TouchableOpacity>
               </View>
             )}
