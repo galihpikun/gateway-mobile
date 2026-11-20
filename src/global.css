@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    background-color: #101415;
+    color: #f3f0e8;
+    min-height: 100%;
+  }
+}
