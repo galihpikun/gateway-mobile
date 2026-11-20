@@ -104,7 +104,7 @@ export default function Checkout() {
           keyboardType={identityType === 'KTP' || identityType === 'NPWP' ? 'number-pad' : 'default'} editable={!busy} autoCapitalize="characters" autoCorrect={false} maxLength={42} />
         <Copy>{tr('Backend menyimpan empat karakter terakhir nomor identitas.', 'The backend keeps the last four characters of your ID number.')}</Copy>
         <Feedback busy={busy} error={error || (invalidStock ? tr('Kuota berubah. Sesuaikan pilihan tiket.', 'Availability changed. Adjust ticket quantities.') : '')} />
-        <Action label={tr('Buat pesanan', 'Create order')} onPress={() => { void submit(); }} disabled={busy || !items.length || invalidStock} />
+        <Action label={items.length && total === 0 ? tr('Ambil tiket gratis', 'Claim free tickets') : tr('Buat pesanan', 'Create order')} onPress={() => { void submit(); }} disabled={busy || !items.length || invalidStock} />
       </Panel>
     </>}
   </Screen>;
