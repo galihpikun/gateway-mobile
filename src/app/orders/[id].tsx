@@ -12,9 +12,9 @@ export default function OrderDetails() {
   const { user } = useAuth();
   const { tr } = usePreferences();
   const router = useRouter();
-  const load = useCallback(async () => ({ detail: await orderApi.getOrderDetail(id), checkedAt: Date.now() }), [id]);
+  const load = useCallback(() => orderApi.getOrderDetail(id), [id]);
   const order = useResource(load, Boolean(user && id));
-  const record = order.data?.detail.id === id ? order.data?.detail : undefined;
+  const record = order.data?.id === id ? order.data : undefined;
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -34,7 +34,7 @@ export default function OrderDetails() {
   }
 
   async function requestRefund() {
-    if (pending.current || !reason.trim()) return;
+    if (record?.canRequestRefund !== true || pending.current || !reason.trim()) return;
     pending.current = true;
     setBusy(true);
     setError('');
@@ -49,8 +49,6 @@ export default function OrderDetails() {
   if (!user) return <Redirect href="/(auth)/login" />;
   const concert = record?.orderItems?.[0]?.ticketType?.event;
   const refunds = record?.refunds ?? [];
-  const canRefund = record?.paymentStatus === 'PAID' && concert?.isRefundable && Date.parse(concert.startDatetime) > (order.data?.checkedAt ?? Infinity) &&
-    !refunds.some(refund => !['REJECTED', 'FAILED'].includes(refund.status));
   return <Screen title={tr('Rincian pesanan', 'Order details')}>
     <Feedback busy={order.loading || busy} error={order.error || error} />
     <Action quiet label={tr('Periksa status terbaru', 'Refresh status')} onPress={order.reload} disabled={order.loading || busy} />
@@ -65,7 +63,7 @@ export default function OrderDetails() {
     </Panel>}
     {!!refunds.length && <Panel>{refunds.map(refund => <Copy key={refund.id}>Refund · {refund.status} · {rupiah(refund.amount)}</Copy>)}</Panel>}
     {!!note && <Copy bold>{note}</Copy>}
-    {canRefund && <Panel>
+    {record?.canRequestRefund === true && <Panel>
       <Copy bold>{tr('Ajukan refund', 'Request refund')}</Copy>
       <Field label={tr('Alasan refund', 'Refund reason')} value={reason} onChangeText={setReason} editable={!busy} multiline />
       <Action label={tr('Kirim pengajuan refund', 'Submit refund request')} disabled={busy || !reason.trim()} onPress={() => { void requestRefund(); }} />

@@ -184,6 +184,7 @@ export interface Order {
   updatedAt?: string;
   orderItems?: OrderItem[];
   refunds?: Refund[];
+  canRequestRefund?: boolean;
 }
 
 export interface IssuedTicket {
