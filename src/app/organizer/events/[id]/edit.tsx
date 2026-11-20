@@ -596,7 +596,7 @@ export default function EditEventScreen() {
               <Text
                 style={{ color: Colors.gold }}
                 className="font-mono text-[10px] font-bold"
-              >{ui("✓ Selected")}</Text>
+              >{ui("File selected")}</Text>
             )}
           </TouchableOpacity>
         </View>

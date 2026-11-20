@@ -1,3 +1,4 @@
+import { Icon } from '../../../components/Icon';
 import { mobileLabels } from '../../../lib/mobileLabels';
 /**
  * Gateway Mobile — Organizer Studio / Workbench
@@ -458,20 +459,14 @@ export default function OrganizerEventsScreen() {
                         {event.title}
                       </Text>
 
-                      {/* Date & Location */}
-                      <Text
-                        style={{ color: Colors.inkSecondary }}
-                        className="font-mono text-[11px] mb-0.5"
-                      >
-                        📅 {formatDate(event.startDatetime)}
-                      </Text>
-                      <Text
-                        style={{ color: Colors.inkSecondary }}
-                        className="font-mono text-[11px]"
-                        numberOfLines={1}
-                      >
-                        📍 {event.location}
-                      </Text>
+                      <View className="flex-row items-center gap-1.5 mb-1">
+                        <Icon name="calendar" size={14} />
+                        <Text className="text-ink-secondary text-sm shrink">{formatDate(event.startDatetime)}</Text>
+                      </View>
+                      <View className="flex-row items-center gap-1.5">
+                        <Icon name="pin" size={14} />
+                        <Text className="text-ink-secondary text-sm shrink" numberOfLines={1}>{event.location}</Text>
+                      </View>
                     </View>
                   </View>
 

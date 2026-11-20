@@ -370,7 +370,9 @@ export const orderApi = {
 // ==========================================
 export const issuedTicketApi = {
   getMyTickets: async (): Promise<IssuedTicket[]> => {
-    return apiFetch<IssuedTicket[]>('/issued-tickets/my');
+    const tickets = await apiFetch<IssuedTicket[]>('/issued-tickets/my');
+    if (!Array.isArray(tickets)) throw new Error('Unexpected tickets response.');
+    return tickets;
   },
 
   getTicketDetail: async (id: string): Promise<IssuedTicket> => {

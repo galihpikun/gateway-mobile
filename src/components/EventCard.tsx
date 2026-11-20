@@ -1,155 +1,50 @@
-import { mobileLabels } from '../lib/mobileLabels';
-/**
- * Gateway Mobile — Event Card Component
- * Based on .concert-card in globals.css
- */
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import { Event } from '../types/api';
-import { usePreferences, useColors } from '../context/Preferences';
+import { Link } from 'expo-router';
+import { useColors, usePreferences } from '../context/Preferences';
+import type { Event } from '../types/api';
+import { rupiah } from './Flow';
+import { Icon } from './Icon';
 
-interface EventCardProps {
-  event: Event;
-  price: string;
-  onPress: () => void;
-}
-
-export function EventCard({ event, price, onPress }: EventCardProps) {
-  const { language: uiLanguage } = usePreferences();
-  const ui = (label: string) => uiLanguage === 'id' ? mobileLabels[label] ?? label : label;
-  const Colors = useColors();
-  const formatDate = (dateStr: string) =>
-    new Date(dateStr).toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      timeZone: 'Asia/Jakarta',
-    }).toUpperCase();
+export function EventCard({ event, featured = false }: { event: Event; featured?: boolean }) {
+  const { tr, language } = usePreferences();
+  const colors = useColors();
+  const availablePrices = (event.ticketTypes ?? []).filter(type => type.availableQuota > 0).map(type => Number(type.price));
+  const price = availablePrices.length ? Math.min(...availablePrices) : null;
+  const priceLabel = price === null ? tr('Tiket habis', 'Sold out')
+    : price === 0 ? tr('Gratis', 'Free') : tr('Mulai ', 'From ') + rupiah(price);
+  const date = new Intl.DateTimeFormat(language === 'id' ? 'id-ID' : 'en-GB', {
+    day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta',
+  }).format(new Date(event.startDatetime));
 
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.8}
-      className="bg-surface border border-line rounded-sm overflow-hidden"
-    >
-      {/* Image */}
-      <View style={{ height: 160, backgroundColor: Colors.highlight }}>
-        <Image
-          source={{ uri: event.coverImageUrl }}
-          style={{ flex: 1 }}
-          contentFit="cover"
-          transition={200}
-        />
-        {/* Category badge */}
-        {event.category && (
-          <View
-            style={{
-              position: 'absolute',
-              top: 10,
-              left: 10,
-              backgroundColor: Colors.canvas + 'D9',
-              paddingHorizontal: 7,
-              paddingVertical: 4,
-            }}
-          >
-            <Text
-              style={{
-                color: '#fff',
-                fontSize: 8,
-                fontFamily: 'monospace',
-                letterSpacing: 0.4,
-              }}
-            >
-              {event.category.name.toUpperCase()}
-            </Text>
+    <Link href={{ pathname: '/event/[id]', params: { id: event.id } }} asChild>
+      <Pressable accessibilityRole="link" accessibilityLabel={event.title + ', ' + date}
+        className={'border border-line rounded-xl overflow-hidden ' + (featured ? '' : 'flex-row items-start gap-3 p-3')}
+        style={({ pressed }) => ({ backgroundColor: pressed ? colors.highlight : colors.surface })}>
+        {event.coverImageUrl ? (
+          <Image source={event.coverImageUrl} contentFit="cover" style={featured ? { width: '100%', aspectRatio: 1.85 } : { width: 84, height: 94, borderRadius: 7, backgroundColor: colors.panel }} />
+        ) : featured ? null : (
+          <View className="w-[84px] h-[94px] bg-panel rounded-lg items-center justify-center">
+            <Icon name="ticket" size={25} />
           </View>
         )}
-        {/* Arrow */}
-        <View
-          style={{
-            position: 'absolute',
-            right: 10,
-            bottom: 10,
-            width: 32,
-            height: 32,
-            borderRadius: 16,
-            borderWidth: 1,
-            borderColor: 'rgba(255,255,255,0.4)',
-            backgroundColor: 'rgba(16,20,21,0.6)',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Text style={{ color: '#fff', fontSize: 14 }}>↗</Text>
-        </View>
-      </View>
-
-      {/* Info */}
-      <View className="p-3">
-        <Text
-          style={{
-            fontSize: 9,
-            fontFamily: 'monospace',
-            color: Colors.inkSecondary,
-            textTransform: 'uppercase',
-            letterSpacing: 1,
-            marginBottom: 6,
-          }}
-        >
-          {formatDate(event.startDatetime)}
-        </Text>
-        <Text
-          className="text-ink-primary font-bold mb-1.5"
-          style={{ fontSize: 15, letterSpacing: -0.4, lineHeight: 20 }}
-          numberOfLines={2}
-        >
-          {event.title}
-        </Text>
-        <View className="flex-row items-center gap-1.5 mb-2">
-          <Text style={{ color: Colors.inkSecondary, fontSize: 10 }}>📍</Text>
-          <Text
-            className="text-ink-secondary"
-            style={{ fontSize: 10, flex: 1 }}
-            numberOfLines={1}
-          >
-            {event.location}
-          </Text>
-        </View>
-
-        {/* Price bar */}
-        <View
-          className="flex-row items-center justify-between pt-2 mt-1"
-          style={{ borderTopWidth: 1, borderTopColor: Colors.line }}
-        >
-          <View className="flex-row items-center gap-1">
-            <Text
-              style={{
-                fontSize: 10,
-                color: Colors.inkSecondary,
-                fontFamily: 'monospace',
-              }}
-            >{ui("From")}{' '}
-            </Text>
-            <Text
-              style={{
-                fontSize: 11,
-                color: Colors.gold,
-                fontWeight: '500',
-              }}
-            >
-              {price}
-            </Text>
+        <View className={featured ? 'px-4 py-4 gap-2' : 'flex-1 gap-1.5 self-center'}>
+          <View className="flex-row items-center gap-1.5">
+            <Icon name="calendar" size={15} />
+            <Text className="text-ink-secondary text-[13px] shrink">{date}</Text>
           </View>
-          <Text
-            style={{
-              fontSize: 10,
-              color: Colors.inkSecondary,
-              fontFamily: 'monospace',
-            }}
-          >{ui("Get tickets →")}</Text>
+          <Text className={featured ? 'text-ink-primary text-2xl font-bold tracking-tight' : 'text-ink-primary text-base font-bold'} numberOfLines={2}>{event.title}</Text>
+          <View className="flex-row items-center gap-1.5">
+            <Icon name="pin" size={15} />
+            <Text numberOfLines={1} className="text-ink-secondary text-[13px] flex-1">{event.location}</Text>
+          </View>
+          <View className="flex-row items-center gap-2">
+            <Text className="text-gold text-sm font-semibold flex-1">{priceLabel}</Text>
+            <Icon name="next" size={17} color={colors.gold} />
+          </View>
         </View>
-      </View>
-    </TouchableOpacity>
+      </Pressable>
+    </Link>
   );
 }

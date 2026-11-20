@@ -17,6 +17,7 @@ import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { usePreferences, useColors } from '../../context/Preferences';
 import { canBuy } from '../../lib/checkout';
+import { Icon } from '../../components/Icon';
 import { ConcertMedia } from '../../components/ConcertMedia';
 import { eventApi } from '../../lib/api';
 import { Event } from '../../types/api';
@@ -28,7 +29,7 @@ export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
-  const { tr } = usePreferences();
+  const { tr, language } = usePreferences();
 
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,7 +45,7 @@ export default function EventDetailScreen() {
   }, [id]);
 
   const formatDate = (dateStr: string) =>
-    new Date(dateStr).toLocaleDateString('id-ID', {
+    new Date(dateStr).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-GB', {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
@@ -83,7 +84,8 @@ export default function EventDetailScreen() {
         <Text className="text-ink-primary font-bold text-xl mb-2">{ui("Event not found")}</Text>
         <Text className="text-ink-secondary text-xs text-center mb-6">{ui("This event could not be loaded. It may have been removed.")}</Text>
         <TouchableOpacity
-          onPress={() => router.back()}
+          accessibilityRole="button" accessibilityLabel={tr('Kembali', 'Back')}
+            onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/explore')}
           className="border border-edge px-5 py-2.5 rounded-sm"
         >
           <Text className="text-ink-primary text-xs font-mono">{ui("Go Back")}</Text>
@@ -96,9 +98,9 @@ export default function EventDetailScreen() {
     <SafeAreaView
       style={{ flex: 1, backgroundColor: Colors.canvas }}
       className="flex-1 bg-canvas"
-      edges={['top']}
+      edges={['top', 'bottom']}
     >
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView className="flex-1" contentContainerStyle={{ width: '100%', maxWidth: 680, alignSelf: 'center' }}>
         {/* Cover Image */}
         <View style={{ height: 220, backgroundColor: Colors.highlight }}>
           <Image
@@ -109,7 +111,8 @@ export default function EventDetailScreen() {
           />
           {/* Back button overlay */}
           <TouchableOpacity
-            onPress={() => router.back()}
+            accessibilityRole="button" accessibilityLabel={tr('Kembali', 'Back')}
+            onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/explore')}
             style={{
               position: 'absolute',
               top: 16,
@@ -117,76 +120,57 @@ export default function EventDetailScreen() {
               backgroundColor: Colors.canvas + 'CC',
               borderWidth: 1,
               borderColor: Colors.edge,
-              width: 36,
-              height: 36,
-              borderRadius: 4,
+              width: 44,
+              height: 44,
+              borderRadius: 8,
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Text style={{ color: Colors.inkPrimary, fontSize: 16 }}>←</Text>
+            <Icon name="back" color={Colors.inkPrimary} />
           </TouchableOpacity>
 
-          {/* Category badge */}
-          {event.category && (
-            <View
-              style={{
-                position: 'absolute',
-                top: 16,
-                right: 16,
-                backgroundColor: Colors.canvas + 'CC',
-              }}
-              className="px-2 py-1"
-            >
-              <Text className="text-white text-xs font-mono uppercase tracking-widest">
-                {event.category.name}
-              </Text>
-            </View>
-          )}
         </View>
 
-        <View className="px-4 pt-5 pb-10">
-          {/* Category eyebrow */}
-          <Text className="text-gold text-xs font-mono uppercase tracking-widest mb-2">
-            {event.category?.name ?? 'Live Event'}
-          </Text>
+        <View className="px-5 pt-5 pb-8">
+          {!!event.category && <Text className="text-gold text-sm font-medium mb-2">{event.category.name}</Text>}
 
           {/* Title */}
-          <Text className="text-ink-primary font-bold text-2xl tracking-tight mb-4">
+          <Text accessibilityRole="header" className="text-ink-primary font-bold text-3xl tracking-tight mb-4">
             {event.title}
           </Text>
 
           {/* Key Details */}
-          <View className="bg-surface border border-line rounded-sm p-4 mb-5 gap-3">
+          <View className="bg-surface border border-line rounded-xl p-4 mb-5 gap-3">
             <View className="flex-row gap-3">
-              <Text className="text-ink-secondary text-sm w-5">📅</Text>
+              <Icon name="calendar" size={18} />
               <View className="flex-1">
                 <Text className="text-ink-primary text-sm">
                   {formatDate(event.startDatetime)}
                 </Text>
-                <Text className="text-ink-secondary text-xs font-mono">
+                <Text className="text-ink-secondary text-sm">
                   {formatTime(event.startDatetime)} —{' '}
                   {formatTime(event.endDatetime)} WIB
                 </Text>
               </View>
             </View>
             <View className="flex-row gap-3">
-              <Text className="text-ink-secondary text-sm w-5">📍</Text>
+              <Icon name="pin" size={18} />
               <Text className="text-ink-primary text-sm flex-1">
                 {event.location}
               </Text>
             </View>
             {Boolean(event.organizer?.organizerProfile?.organizationName) && (
               <View className="flex-row gap-3">
-                <Text className="text-ink-secondary text-sm w-5">🎪</Text>
+                <Icon name="user" size={18} />
                 <Text className="text-ink-primary text-sm flex-1">
                   {event.organizer?.organizerProfile?.organizationName}
                 </Text>
               </View>
             )}
             <View className="flex-row gap-3">
-              <Text className="text-ink-secondary text-sm w-5">🔄</Text>
-              <Text className="text-ink-secondary text-xs font-mono flex-1">
+              <Icon name="refund" size={18} />
+              <Text className="text-ink-secondary text-sm flex-1">
                 {event.isRefundable ? ui('Refundable') : ui('Non-refundable')}
               </Text>
             </View>
@@ -196,20 +180,20 @@ export default function EventDetailScreen() {
           <ConcertMedia event={event} />
           {event.ticketTypes && event.ticketTypes.length > 0 && (
             <View className="mb-5">
-              <Text className="text-ink-secondary text-xs font-mono uppercase tracking-widest mb-3">{ui("Ticket Types")}</Text>
+              <Text className="text-ink-primary text-lg font-bold mb-3">{ui("Ticket Types")}</Text>
               <View className="gap-2">
                 {event.ticketTypes.map((type) => (
                   <View
                     key={type.id}
-                    className="bg-surface border border-line rounded-sm px-4 py-3 flex-row items-center justify-between"
+                    className="bg-surface border border-line rounded-lg px-4 py-3 flex-row items-center justify-between"
                   >
                     <View className="flex-1">
                       <Text className="text-ink-primary text-sm font-bold">
                         {type.name}
                       </Text>
-                      <Text className="text-ink-secondary text-xs font-mono mt-0.5">
+                      <Text className="text-ink-secondary text-sm mt-0.5">
                         {type.availableQuota > 0
-                          ? `${type.availableQuota} available`
+                          ? type.availableQuota + ' ' + tr('tersedia', 'available')
                           : ui('Sold out')}
                       </Text>
                     </View>
@@ -226,7 +210,7 @@ export default function EventDetailScreen() {
 
           {/* Description */}
           <View className="mb-5">
-            <Text className="text-ink-secondary text-xs font-mono uppercase tracking-widest mb-3">{ui("About this Event")}</Text>
+            <Text className="text-ink-primary text-lg font-bold mb-3">{ui("About this Event")}</Text>
             <Text
               className="text-ink-secondary text-sm leading-relaxed"
               style={{ lineHeight: 20 }}
@@ -247,12 +231,12 @@ export default function EventDetailScreen() {
               borderTopWidth: 1,
               borderTopColor: Colors.line,
               padding: 16,
-              paddingBottom: 32,
+              paddingBottom: 12,
             }}
           >
-            <View className="flex-row items-center justify-between mb-3">
+            <View className="flex-row flex-wrap items-center justify-between gap-3 w-full max-w-[680px] self-center">
               <View>
-                <Text className="text-ink-secondary text-xs font-mono uppercase tracking-widest">{ui("From")}</Text>
+                <Text className="text-ink-secondary text-sm uppercase tracking-widest">{ui("From")}</Text>
                 <Text className="text-gold font-bold text-xl">
                   {(() => {
                     const prices =
@@ -272,8 +256,8 @@ export default function EventDetailScreen() {
                 </Text>
               </View>
               <Link href={{ pathname: '/checkout/[id]', params: { id: event.id } }} asChild>
-                <Pressable accessibilityRole="link" className="bg-gold px-6 py-3 rounded-sm">
-                  <Text className="text-action-ink font-bold text-sm uppercase tracking-widest">{tr('Beli tiket', 'Get tickets')}</Text>
+                <Pressable accessibilityRole="link" className="bg-gold px-5 min-h-12 rounded-lg flex-row items-center gap-2">
+                  <Text className="text-action-ink font-bold text-base">{tr('Beli tiket', 'Get tickets')}</Text>
                 </Pressable>
               </Link>
             </View>

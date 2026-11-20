@@ -552,7 +552,7 @@ export default function NewEventScreen() {
                 <Text
                   style={{ color: Colors.gold }}
                   className="font-mono text-[10px] font-bold"
-                >{ui("✓ Attached")}</Text>
+                >{ui("File attached")}</Text>
               )}
             </TouchableOpacity>
             {Boolean(coverImage) && (

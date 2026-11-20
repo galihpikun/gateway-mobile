@@ -167,7 +167,7 @@ export default function OrganizerOnboardingScreen() {
         <Text
           style={{ color: Colors.inkSecondary }}
           className="font-mono text-xs uppercase tracking-widest mt-4 text-center"
-        >{ui("LOADING PROMOTER DOSSIER...")}</Text>
+        >{ui("Loading organizer profile…")}</Text>
       </SafeAreaView>
     );
   }
@@ -222,7 +222,7 @@ export default function OrganizerOnboardingScreen() {
                 <Text
                   style={{ color: Colors.inkSecondary }}
                   className="font-mono text-[10px] uppercase tracking-widest mb-1"
-                >{ui("ORGANIZER VERIFICATION DOSSIER")}</Text>
+                >{ui("Organizer verification")}</Text>
                 <Text
                   style={{ color: Colors.inkPrimary }}
                   className="font-bold text-2xl tracking-tight"
@@ -290,7 +290,7 @@ export default function OrganizerOnboardingScreen() {
                 <Text
                   style={{ color: Colors.inkPrimary }}
                   className="font-bold text-base mb-1"
-                >{ui("Dossier Under Compliance Review")}</Text>
+                >{ui("Documents under review")}</Text>
                 <Text
                   style={{ color: Colors.inkSecondary }}
                   className="text-xs leading-relaxed"
@@ -784,7 +784,7 @@ export default function OrganizerOnboardingScreen() {
                 <Text
                   style={{ color: Colors.gold }}
                   className="font-mono text-[10px]"
-                >{ui("✓ Attached")}</Text>
+                >{ui("File attached")}</Text>
               )}
             </TouchableOpacity>
             {Boolean(businessLicense) && (
@@ -838,7 +838,7 @@ export default function OrganizerOnboardingScreen() {
                 <Text
                   style={{ color: Colors.gold }}
                   className="font-mono text-[10px]"
-                >{ui("✓ Attached")}</Text>
+                >{ui("File attached")}</Text>
               )}
             </TouchableOpacity>
             {Boolean(guaranteeLetter) && (
@@ -894,7 +894,7 @@ export default function OrganizerOnboardingScreen() {
                 <Text
                   style={{ color: Colors.gold }}
                   className="font-mono text-[10px]"
-                >{ui("✓ Attached")}</Text>
+                >{ui("File attached")}</Text>
               )}
             </TouchableOpacity>
             {Boolean(organizationRegistration) && (
@@ -953,7 +953,7 @@ export default function OrganizerOnboardingScreen() {
                 <Text
                   style={{ color: Colors.gold }}
                   className="font-mono text-[10px]"
-                >{ui("✓ Attached")}</Text>
+                >{ui("File attached")}</Text>
               )}
             </TouchableOpacity>
             {Boolean(identityCard) && (
@@ -1001,7 +1001,7 @@ export default function OrganizerOnboardingScreen() {
               style={{ color: Colors.canvas }}
               className="font-mono text-xs uppercase tracking-widest font-black"
             >
-              {submitting ? ui('Uploading Dossier...') : ui('Submit Dossier for Review')}
+              {submitting ? ui('Uploading documents…') : ui('Send documents for review')}
             </Text>
           </TouchableOpacity>
         </View>

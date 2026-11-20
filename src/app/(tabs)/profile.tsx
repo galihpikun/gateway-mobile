@@ -13,6 +13,7 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
+  Pressable,
   ActivityIndicator,
   Alert,
   Image,
@@ -22,7 +23,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { authApi } from '../../lib/api';
-import { Action, Copy, Panel } from '../../components/Flow';
+import { Icon, type IconName } from '../../components/Icon';
 import { usePreferences, useColors } from '../../context/Preferences';
 
 import {
@@ -31,39 +32,23 @@ import {
   PickedDocument,
 } from '../../lib/filePicker';
 
-function ProfileRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | null | undefined;
-}) {
-  const Colors = useColors();
+function ProfileLink({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
+  const colors = useColors();
   return (
-    <View
-      style={{ borderBottomColor: Colors.line, borderBottomWidth: 1 }}
-      className="py-3"
-    >
-      <Text
-        style={{ color: Colors.inkSecondary }}
-        className="text-xs font-mono uppercase tracking-widest mb-1"
-      >
-        {label}
-      </Text>
-      <Text
-        style={{ color: Colors.inkPrimary }}
-        className="text-sm font-mono"
-      >
-        {value || '—'}
-      </Text>
-    </View>
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress}
+      className="flex-row min-h-14 items-center gap-3 border-t border-line px-4 py-3"
+      style={({ pressed }) => ({ backgroundColor: pressed ? colors.highlight : colors.surface })}>
+      <Icon name={icon} color={colors.gold} />
+      <Text className="flex-1 text-ink-primary text-base font-semibold">{label}</Text>
+      <Icon name="next" size={17} />
+    </Pressable>
   );
 }
 
 export default function ProfileScreen() {
   const ui = (label: string) => tr(mobileLabels[label] ?? label, label);
   const Colors = useColors();
-  const { theme, language, setTheme, setLanguage, tr } = usePreferences();
+  const { tr } = usePreferences();
   const router = useRouter();
   const { user, logout, loading, refreshUser } = useAuth();
 
@@ -91,9 +76,7 @@ export default function ProfileScreen() {
     if (user) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- Synchronize the editable draft when the authenticated account changes.
       setFullName(user.fullName || '');
-      if (user.avatar) {
-        setAvatarPreview(user.avatar);
-      }
+      setAvatarPreview(user.avatar ?? null);
     }
   }, [user]);
 
@@ -139,19 +122,12 @@ export default function ProfileScreen() {
     try {
       const doc = await pickImageDocument();
       if (doc) {
-        if ((doc.size ?? 0) > 5 * 1024 * 1024) {
-          Alert.alert('File Too Large', 'Avatar image must be 5MB or less.');
-          return;
-        }
+        setProfileError(null);
         setAvatarDoc(doc);
-        if (doc.file) {
-          setAvatarPreview(URL.createObjectURL(doc.file));
-        } else if (doc.uri) {
-          setAvatarPreview(doc.uri);
-        }
+        setAvatarPreview(doc.uri);
       }
     } catch (err) {
-      console.warn('Pick avatar error:', err);
+      setProfileError(err instanceof Error ? err.message : tr('Foto gagal dibuka.', 'Could not open the photo.'));
     }
   };
 
@@ -240,78 +216,19 @@ export default function ProfileScreen() {
     }
   };
 
-  const formatDate = (dateStr?: string) => {
-    if (!dateStr) return null;
-    return new Date(dateStr).toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-  };
-
-  const roleBadge = {
-    USER: { label: 'User', color: Colors.edge },
-    ADMIN: { label: 'Admin', color: Colors.terracotta },
-    STAFF: { label: 'Staff', color: Colors.gold },
-  }[user?.role ?? 'USER'];
-
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: Colors.canvas }}
-      className="flex-1 bg-canvas"
-      edges={['top']}
-    >
-      {/* Header */}
-      <View
-        style={{ borderBottomColor: Colors.line, borderBottomWidth: 1 }}
-        className="px-4 pt-4 pb-3 flex-row items-center justify-between"
-      >
-        <View>
-          <Text
-            style={{ color: Colors.inkPrimary }}
-            className="font-bold text-xl tracking-tight"
-          >{ui("Profile")}</Text>
-          <Text
-            style={{ color: Colors.inkSecondary }}
-            className="text-xs font-mono mt-0.5 uppercase tracking-widest"
-          >{ui("ACCOUNT DOSSIER")}</Text>
+    <SafeAreaView className="flex-1 bg-canvas" edges={['top']}>
+      <ScrollView className="flex-1" keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ width: '100%', maxWidth: 600, alignSelf: 'center', paddingBottom: 20 }}>
+        <View className="px-4 pt-5 pb-4 gap-1">
+          <Text accessibilityRole="header" className="text-ink-primary text-3xl font-bold tracking-tight">{tr('Profil', 'Profile')}</Text>
+          {!!user?.fullName && <Text className="text-ink-secondary text-base">{user.fullName}</Text>}
         </View>
-
-        <View
-          style={{
-            backgroundColor: roleBadge.color + '20',
-            borderColor: roleBadge.color,
-            borderWidth: 1,
-          }}
-          className="px-3 py-1 rounded-full"
-        >
-          <Text
-            style={{ color: roleBadge.color }}
-            className="text-xs font-mono font-bold uppercase tracking-widest"
-          >
-            {roleBadge.label}
-          </Text>
-        </View>
-      </View>
-
-      <ScrollView
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 40 }}
-      >
-        <View className="mx-4 mt-4 gap-3">
-          <Panel>
-            <Copy bold>{tr('Pengaturan aplikasi', 'App preferences')}</Copy>
-            <View className="flex-row flex-wrap gap-2">
-              <Action label="Indonesia" quiet={language !== 'id'} onPress={() => setLanguage('id')} />
-              <Action label="English" quiet={language !== 'en'} onPress={() => setLanguage('en')} />
-              <Action label={tr('Gelap', 'Dark')} quiet={theme !== 'dark'} onPress={() => setTheme('dark')} />
-              <Action label={tr('Terang', 'Light')} quiet={theme !== 'light'} onPress={() => setTheme('light')} />
-            </View>
-          </Panel>
-          <Action quiet label={tr('Pesanan saya', 'My orders')} onPress={() => router.push('/orders')} />
-          {user?.role === 'ADMIN' && <Action label={tr('Dashboard admin', 'Admin dashboard')} onPress={() => router.push('/admin')} />}
-          {(user?.role === 'STAFF' || user?.role === 'ADMIN') && <Action label={tr('Scanner gerbang', 'Gate scanner')} onPress={() => router.push('/staff')} />}
+        <View className="mx-4 bg-surface border border-line rounded-xl overflow-hidden">
+          <ProfileLink icon="order" label={tr('Pesanan saya', 'My orders')} onPress={() => router.push('/orders')} />
+          <ProfileLink icon="settings" label={tr('Pengaturan', 'Settings')} onPress={() => router.push('/settings')} />
+          {user?.role === 'ADMIN' && <ProfileLink icon="shield" label={tr('Dashboard admin', 'Admin dashboard')} onPress={() => router.push('/admin')} />}
+          {(user?.role === 'STAFF' || user?.role === 'ADMIN') && <ProfileLink icon="qr" label={tr('Scanner gerbang', 'Gate scanner')} onPress={() => router.push('/staff')} />}
         </View>
         {/* Suspension warning */}
         {user?.isSuspended && (
@@ -342,7 +259,7 @@ export default function ProfileScreen() {
         <View className="px-4 pt-5 pb-5">
           <Text
             style={{ color: Colors.inkSecondary }}
-            className="text-xs font-mono uppercase tracking-widest mb-2"
+            className="text-ink-primary font-bold text-lg mb-2"
           >{ui("Personal Information")}</Text>
 
           <View
@@ -351,7 +268,7 @@ export default function ProfileScreen() {
               borderColor: Colors.line,
               borderWidth: 1,
             }}
-            className="p-4 rounded-sm"
+            className="p-4 rounded-xl"
           >
             {/* Avatar Preview & Picker */}
             <View className="items-center py-2 mb-4">
@@ -405,7 +322,7 @@ export default function ProfileScreen() {
                   style={{ color: Colors.gold }}
                   className="font-mono text-[11px] uppercase font-bold tracking-wider"
                 >
-                  {avatarDoc ? ui('✓ Image Attached') : ui('Change Profile Picture')}
+                  {avatarDoc ? ui('Photo attached') : ui('Change Profile Picture')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -487,7 +404,7 @@ export default function ProfileScreen() {
                 style={{ color: Colors.gold }}
                 className="font-mono text-[10px] mt-1"
               >
-                {user?.emailVerified ? ui('Verified Account ✓') : ui('Unverified')}
+                {user?.emailVerified ? ui('Verified account') : ui('Unverified')}
               </Text>
             </View>
 
@@ -519,8 +436,8 @@ export default function ProfileScreen() {
         <View className="px-4 pb-5">
           <Text
             style={{ color: Colors.inkSecondary }}
-            className="text-xs font-mono uppercase tracking-widest mb-2"
-          >{ui("Security & Credentials")}</Text>
+            className="text-ink-primary font-bold text-lg mb-2"
+          >{ui("Security")}</Text>
 
           <View
             style={{
@@ -528,7 +445,7 @@ export default function ProfileScreen() {
               borderColor: Colors.line,
               borderWidth: 1,
             }}
-            className="p-4 rounded-sm"
+            className="p-4 rounded-xl"
           >
             <Text
               style={{ color: Colors.inkPrimary }}
@@ -708,38 +625,12 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Section 3: Account Metadata Information */}
-        <View className="px-4 pb-5">
-          <Text
-            style={{ color: Colors.inkSecondary }}
-            className="text-xs font-mono uppercase tracking-widest mb-2"
-          >{ui("Account Metadata")}</Text>
-
-          <View
-            style={{
-              backgroundColor: Colors.surface,
-              borderColor: Colors.line,
-              borderWidth: 1,
-            }}
-            className="rounded-sm px-4"
-          >
-            <ProfileRow
-              label="Member Since"
-              value={formatDate(user?.createdAt)}
-            />
-            <ProfileRow
-              label="Account ID"
-              value={user?.id}
-            />
-          </View>
-        </View>
-
-        {/* Section 4: Promoter & Organizer Studio */}
+        {/* Section 4: Organizer Studio */}
         {user?.role === 'USER' && <View className="px-4 pb-6">
           <Text
             style={{ color: Colors.inkSecondary }}
-            className="text-xs font-mono uppercase tracking-widest mb-2"
-          >{ui("Promoter & Organizer Studio")}</Text>
+            className="text-ink-primary font-bold text-lg mb-2"
+          >{ui("Organizer Studio")}</Text>
 
           {user?.organizerProfile ? (
             <View
@@ -748,7 +639,7 @@ export default function ProfileScreen() {
                 borderColor: Colors.line,
                 borderWidth: 1,
               }}
-              className="p-4 rounded-sm"
+              className="p-4 rounded-xl"
             >
               <View className="flex-row items-center justify-between mb-2">
                 <Text
@@ -812,7 +703,7 @@ export default function ProfileScreen() {
                     <Text
                       style={{ color: Colors.inkSecondary }}
                       className="font-mono text-[11px] uppercase tracking-wider"
-                    >{ui("View Verification Dossier")}</Text>
+                    >{ui("View verification documents")}</Text>
                   </TouchableOpacity>
                 </View>
               ) : user.organizerProfile.status === 'PENDING' ? (
@@ -834,7 +725,7 @@ export default function ProfileScreen() {
                     <Text
                       style={{ color: Colors.gold }}
                       className="font-mono text-xs font-bold uppercase tracking-widest"
-                    >{ui("View Submitted Dossier →")}</Text>
+                    >{ui("View submitted documents")}</Text>
                   </TouchableOpacity>
                 </View>
               ) : (
@@ -867,7 +758,7 @@ export default function ProfileScreen() {
                 borderColor: Colors.line,
                 borderWidth: 1,
               }}
-              className="p-4 rounded-sm"
+              className="p-4 rounded-xl"
             >
               <Text
                 style={{ color: Colors.inkPrimary }}
@@ -912,16 +803,12 @@ export default function ProfileScreen() {
             ) : null}
             <Text
               style={{ color: Colors.terracotta }}
-              className="font-bold text-sm uppercase tracking-widest font-mono"
+              className="font-bold text-sm"
             >
               {loggingOut ? ui('Signing out...') : ui('Sign Out')}
             </Text>
           </TouchableOpacity>
 
-          <Text
-            style={{ color: Colors.inkSecondary }}
-            className="text-xs text-center font-mono mt-4"
-          >{ui("GATEWAY · THE LIVE EXPERIENCE")}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

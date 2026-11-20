@@ -82,7 +82,7 @@ export default function RegisterScreen() {
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
       >
-        <View className="flex-1 justify-center px-6 py-12">
+        <View className="flex-1 justify-center px-5 py-10 w-full max-w-[480px] self-center">
           {/* Logo */}
           <View className="items-center mb-10">
             <GatewayLogo size={48} />
@@ -90,12 +90,8 @@ export default function RegisterScreen() {
               style={{ color: Colors.inkPrimary }}
               className="text-ink-primary font-bold text-3xl tracking-tighter mt-3"
             >
-              GATEWAY
+              Gateway
             </Text>
-            <Text
-              style={{ color: Colors.inkSecondary }}
-              className="text-ink-secondary text-xs tracking-widest uppercase font-mono mt-1"
-            >{ui("The Live Experience")}</Text>
           </View>
 
           {/* Auth Panel */}
@@ -105,7 +101,7 @@ export default function RegisterScreen() {
               borderColor: Colors.line,
               borderWidth: 1,
             }}
-            className="bg-surface border border-line rounded-sm p-6"
+            className="bg-surface border border-line rounded-xl p-5"
           >
             <View
               style={{ borderBottomColor: Colors.edge + '33', borderBottomWidth: 1 }}
