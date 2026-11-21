@@ -297,7 +297,10 @@ export const eventApi = {
   searchInvitableUsers: async (search?: string): Promise<User[]> => {
     const q = new URLSearchParams();
     if (search) q.set('search', search);
-    return apiFetch<User[]>(`/events/search-invitable-users?${q.toString()}`);
+    const users = await apiFetch<User[] | PaginatedResponse<User>>(
+      `/events/search-invitable-users?${q.toString()}`,
+    );
+    return Array.isArray(users) ? users : users.data;
   },
 };
 
