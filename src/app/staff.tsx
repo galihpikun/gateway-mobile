@@ -8,10 +8,17 @@ import { Action, Copy, Feedback, Field, message, Panel, Screen, useResource } fr
 import { type GateTicket, staffApi } from '../lib/operations';
 
 export default function StaffScreen() {
-  const { user, role } = useAuth();
+  const { user, role, loading } = useAuth();
+  if (loading) return null;
+  if (!user) return <Redirect href="/(auth)/login" />;
+  if (role === 'ADMIN') return <Redirect href="/admin" />;
+  if (role !== 'STAFF') return <Redirect href="/(tabs)" />;
+  return <StaffConsole />;
+}
+
+function StaffConsole() {
   const { tr } = usePreferences();
-  const allowed = role === 'STAFF' || role === 'ADMIN';
-  const events = useResource(staffApi.events, allowed);
+  const events = useResource(staffApi.events);
   const [focused, setFocused] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
   const [foreground, setForeground] = useState(AppState.currentState == null || AppState.currentState === 'active');
@@ -19,7 +26,7 @@ export default function StaffScreen() {
   const gate = events.data?.find(event => event.id === selected) ?? events.data?.[0];
   const eventId = gate?.id;
   const loadStats = useCallback(() => staffApi.dashboard(eventId!), [eventId]);
-  const stats = useResource(loadStats, allowed && Boolean(eventId));
+  const stats = useResource(loadStats, Boolean(eventId));
   const [code, setCode] = useState('');
   const [cameraOpen, setCameraOpen] = useState(false);
   const [candidate, setCandidate] = useState<{ eventId: string; ticket: GateTicket }>();
@@ -79,8 +86,6 @@ export default function StaffScreen() {
     } catch (failure) { setError(message(failure)); }
   }
 
-  if (!user) return <Redirect href="/(auth)/login" />;
-  if (!allowed) return <Redirect href="/(tabs)" />;
   const checked = candidate?.eventId === eventId ? candidate?.ticket : undefined;
   const eligible = checked && !checked.isRedeemed && !checked.isCancelled && !checked.isRefunded && stats.data?.event.id === eventId && stats.data?.event.isActive;
 

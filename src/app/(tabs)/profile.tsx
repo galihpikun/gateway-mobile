@@ -228,7 +228,7 @@ export default function ProfileScreen() {
           <ProfileLink icon="order" label={tr('Pesanan saya', 'My orders')} onPress={() => router.push('/orders')} />
           <ProfileLink icon="settings" label={tr('Pengaturan', 'Settings')} onPress={() => router.push('/settings')} />
           {user?.role === 'ADMIN' && <ProfileLink icon="shield" label={tr('Dashboard admin', 'Admin dashboard')} onPress={() => router.push('/admin')} />}
-          {(user?.role === 'STAFF' || user?.role === 'ADMIN') && <ProfileLink icon="qr" label={tr('Scanner gerbang', 'Gate scanner')} onPress={() => router.push('/staff')} />}
+          {user?.role === 'STAFF' && <ProfileLink icon="qr" label={tr('Scanner gerbang', 'Gate scanner')} onPress={() => router.push('/staff')} />}
         </View>
         {/* Suspension warning */}
         {user?.isSuspended && (

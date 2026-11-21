@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { Linking, View } from 'react-native';
-import { Redirect, useRouter } from 'expo-router';
+import { Redirect } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 import { usePreferences } from '../context/Preferences';
 import { Action, Copy, Feedback, Field, message, Panel, rupiah, Screen, useResource } from '../components/Flow';
@@ -13,7 +13,6 @@ type Review = { type: 'event' | 'organizer' | 'document' | 'refund'; id: string;
 export default function AdminScreen() {
   const { user, isAdmin } = useAuth();
   const { tr } = usePreferences();
-  const router = useRouter();
   const [section, setSection] = useState<Section>('events');
   const [page, setPage] = useState(1);
   const [organizerId, setOrganizerId] = useState('');
@@ -75,7 +74,6 @@ export default function AdminScreen() {
           setSection(key); setPage(1); setOrganizerId(''); setReview(undefined); setError(''); setNote('');
         }} />)}
     </View>
-    <Action quiet label={tr('Buka scanner gerbang', 'Open gate scanner')} onPress={() => router.push('/staff')} />
     <Feedback busy={rows.loading} error={rows.error} />
     <Action quiet label={tr('Muat ulang', 'Refresh')} disabled={busy} onPress={() => { rows.reload(); dashboard.reload(); organizer.reload(); }} />
     {review && <Panel>
