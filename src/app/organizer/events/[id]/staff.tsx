@@ -37,7 +37,7 @@ interface StaffItem {
 }
 
 export default function EventStaffScreen() {
-  const { language: uiLanguage } = usePreferences();
+  const { language: uiLanguage, tr } = usePreferences();
   const ui = (label: string) => uiLanguage === 'id' ? mobileLabels[label] ?? label : label;
   const Colors = useColors();
   const { id: eventId } = useLocalSearchParams<{ id: string }>();
@@ -55,6 +55,7 @@ export default function EventStaffScreen() {
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const [invitingId, setInvitingId] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -99,6 +100,20 @@ export default function EventStaffScreen() {
     }
   }, [user, isOrganizerApproved, eventId, loadData]);
 
+  const canSubmit = event?.status === 'DRAFT' || event?.status === 'REJECTED';
+  const handleSubmit = async () => {
+    if (!canSubmit || invitingId || submitting) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      await eventApi.submitEvent(eventId);
+      router.replace('/organizer/events');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : tr('Gagal mengajukan konser.', 'Failed to submit event.'));
+      setSubmitting(false);
+    }
+  };
+
   const handleSearchUsers = async () => {
     if (!searchQuery.trim()) return;
     setSearching(true);
@@ -115,6 +130,7 @@ export default function EventStaffScreen() {
 
   const handleInvite = async (targetUserId: string) => {
     if (!eventId) return;
+    if (submitting || invitingId) return;
     setInvitingId(targetUserId);
     setError(null);
     setSuccess(null);
@@ -189,7 +205,7 @@ export default function EventStaffScreen() {
         className="px-4 py-3 flex-row items-center justify-between"
       >
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={() => router.canGoBack() ? router.back() : router.replace('/organizer/events')}
           activeOpacity={0.7}
           className="py-1 px-2"
         >
@@ -226,6 +242,21 @@ export default function EventStaffScreen() {
             style={{ color: Colors.inkSecondary }}
             className="text-xs font-mono"
           >{ui("Authorize event crew members to redeem and scan attendee QR passes at gates.")}</Text>
+          {canSubmit && <View className="mt-4 gap-2">
+            <Text style={{ color: Colors.inkSecondary }} className="text-sm">
+              {tr('Undangan staf aktif setelah konser disetujui.', 'Staff invitations activate when the event is approved.')}
+            </Text>
+            <TouchableOpacity
+              onPress={handleSubmit}
+              disabled={submitting || Boolean(invitingId)}
+              style={{ backgroundColor: Colors.gold, opacity: submitting || invitingId ? 0.5 : 1 }}
+              className="self-start px-4 py-3 rounded-sm"
+            >
+              <Text style={{ color: Colors.canvas }} className="font-bold text-sm">
+                {submitting ? tr('Mengajukan konser...', 'Submitting for review...') : tr('Ajukan untuk ditinjau', 'Submit for Review')}
+              </Text>
+            </TouchableOpacity>
+          </View>}
         </View>
 
         {Boolean(error) && (

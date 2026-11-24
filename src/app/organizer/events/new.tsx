@@ -39,7 +39,7 @@ interface TicketTierInput {
 }
 
 export default function NewEventScreen() {
-  const { language: uiLanguage } = usePreferences();
+  const { language: uiLanguage, tr } = usePreferences();
   const ui = (label: string) => uiLanguage === 'id' ? mobileLabels[label] ?? label : label;
   const Colors = useColors();
   const router = useRouter();
@@ -239,13 +239,8 @@ export default function NewEventScreen() {
         ),
       );
 
-      await eventApi.createEvent(formData);
-      Alert.alert('Success', 'Event created successfully!', [
-        {
-          text: 'Go to Studio',
-          onPress: () => router.replace('/organizer/events' as any),
-        },
-      ]);
+      const event = await eventApi.createEvent(formData);
+      router.replace({ pathname: '/organizer/events/[id]/staff', params: { id: event.id } });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to create event';
       setError(msg);
@@ -724,7 +719,7 @@ export default function NewEventScreen() {
             style={{ color: Colors.canvas }}
             className="font-mono text-xs uppercase tracking-widest font-black"
           >
-            {submitting ? ui('Creating Event...') : ui('Create Live Event Listing')}
+            {submitting ? ui('Creating Event...') : tr('Simpan draf dan pilih staf', 'Save Draft and Choose Staff')}
           </Text>
         </TouchableOpacity>
       </ScrollView>

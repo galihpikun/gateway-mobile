@@ -500,6 +500,24 @@ export default function OrganizerEventsScreen() {
                     }}
                     className="flex-row flex-wrap items-center justify-end gap-2"
                   >
+                    {['DRAFT', 'REJECTED', 'PENDING_REVIEW', 'PUBLISHED'].includes(event.status) && (
+                      <TouchableOpacity
+                        onPress={() => router.push({ pathname: '/organizer/events/[id]/staff', params: { id: event.id } })}
+                        style={{
+                          borderColor: Colors.line,
+                          borderWidth: 1,
+                          backgroundColor: Colors.surface,
+                        }}
+                        className="px-3 py-2 rounded-sm"
+                        activeOpacity={0.7}
+                      >
+                        <Text
+                          style={{ color: Colors.gold }}
+                          className="font-mono text-xs uppercase tracking-wider font-bold"
+                        >{ui("Staff Roster")}</Text>
+                      </TouchableOpacity>
+                    )}
+
                     {/* Draft Actions */}
                     {event.status === 'DRAFT' && (
                       <>
@@ -562,22 +580,6 @@ export default function OrganizerEventsScreen() {
                             style={{ color: Colors.inkPrimary }}
                             className="font-mono text-xs uppercase tracking-wider"
                           >{ui("View Live")}</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                          onPress={() => router.push(`/organizer/events/${event.id}/staff` as any)}
-                          style={{
-                            borderColor: Colors.line,
-                            borderWidth: 1,
-                            backgroundColor: Colors.surface,
-                          }}
-                          className="px-3 py-2 rounded-sm"
-                          activeOpacity={0.7}
-                        >
-                          <Text
-                            style={{ color: Colors.gold }}
-                            className="font-mono text-xs uppercase tracking-wider font-bold"
-                          >{ui("Staff Roster")}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
